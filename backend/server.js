@@ -197,7 +197,9 @@ function createApp() {
     });
 
     app.use(express.json({ limit: '32kb' }));
-    app.use('/app', serveFrontendFiles, express.static(path.resolve(__dirname, '..'), { dotfiles: 'deny' }));
+    const frontendRoot = path.resolve(__dirname, '..', 'frontend');
+    app.use('/app', serveFrontendFiles, express.static(frontendRoot, { dotfiles: 'deny' }));
+    app.use('/', serveFrontendFiles, express.static(frontendRoot, { dotfiles: 'deny', index: 'index.html' }));
 
     app.get('/', (request, response) => {
         response.type('html').send(`<!doctype html>

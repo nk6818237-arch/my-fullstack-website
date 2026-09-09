@@ -4,8 +4,15 @@
   "private": true,
   "description": "FalseQuote quotation and invoice generator with backend payment API",
   "scripts": {
-    "start": "node server/server.js",
-    "server": "node server/server.js",
-    "server:dev": "node --watch server/server.js"
+    "start": "node backend/server.js",
+    "server": "node backend/server.js",
+    "server:dev": "node --watch backend/server.js",
+    "postinstall": "npm install --prefix backend"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "express": "^4.21.2",
+    "razorpay": "^2.9.6"
   }
 }

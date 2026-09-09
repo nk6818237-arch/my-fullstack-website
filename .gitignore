@@ -3,8 +3,12 @@ server/falsequote.sqlite
 server/falsequote.sqlite-shm
 server/falsequote.sqlite-wal
 node_modules/
-server/node_modules/
+backend/node_modules/
 user-growth-system/node_modules/
 user-growth-system/dist/
 .env
+backend/.env
+backend/falsequote.sqlite
+backend/falsequote.sqlite-shm
+backend/falsequote.sqlite-wal
 *.log
