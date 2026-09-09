@@ -1808,6 +1808,7 @@
                 <p class="pdf-payment-help">Payment issue? <a href="mailto:supporthelpfalsequote@gmail.com?subject=Quotation%20Payment%20Support%20-%20FalseQuote">supporthelpfalsequote@gmail.com</a></p>
                 <button type="button" id="pay-pdf-btn" class="pdf-success-action">Pay ₹30 to Download PDF</button>
                 <button type="button" id="download-ready-pdf-btn" class="pdf-success-action" disabled aria-disabled="true">⬇ Download Your PDF</button>
+                <button type="button" id="whatsapp-after-download-btn" class="pdf-success-action qb-action-btn--whatsapp" hidden>💬 Share on WhatsApp</button>
                 <button type="button" id="back-to-quotation-btn" class="pdf-success-secondary">Back to Quotation</button>
             </div>
         </div>
@@ -1855,6 +1856,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let pdfProcessingProgress = 0;
     let pdfSoundTimeout = null;
     let measurementMode = 'sft';
+    // TEMPORARY FREE ACCESS: change to false to restore payment protection.
+    const TEMPORARY_FREE_PDF_ACCESS = true;
+    let pdfDownloaded = false;
 
     const ADMIN_PAYMENT_AMOUNT = 30;
     const isLocalHost = window.location.protocol === 'file:' || ['localhost', '127.0.0.1'].includes(window.location.hostname);
@@ -2786,10 +2790,14 @@ document.addEventListener('DOMContentLoaded', () => {
     function showSuccessOverlay() {
         const overlay = document.getElementById('pdf-success-overlay');
         const downloadBtn = document.getElementById('download-ready-pdf-btn');
+        const payBtn = document.getElementById('pay-pdf-btn');
+        const whatsappBtn = document.getElementById('whatsapp-after-download-btn');
         if (downloadBtn) {
             downloadBtn.disabled = !paymentApproved;
             downloadBtn.setAttribute('aria-disabled', String(!paymentApproved));
         }
+        if (payBtn) payBtn.hidden = TEMPORARY_FREE_PDF_ACCESS;
+        if (whatsappBtn) whatsappBtn.hidden = !pdfDownloaded;
         if (overlay) {
             overlay.classList.add('is-visible');
             const confettiBox = overlay.querySelector('.pdf-success-confetti');
@@ -2954,6 +2962,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         preparedPdfDocument = null;
         paymentApproved = false;
+        pdfDownloaded = false;
         activePaymentRequestId = null;
         hideSuccessOverlay();
         showProcessingOverlay();
@@ -2966,8 +2975,11 @@ document.addEventListener('DOMContentLoaded', () => {
             preparedPdfDocument.fileName = generatedPdfFileName;
             generatedPageCount = preparedPdf.pageCount;
             requiredPaymentAmount = ADMIN_PAYMENT_AMOUNT + Math.max(0, generatedPageCount - 2) * 10;
-            document.getElementById('pdf-payment-offer').textContent = `Pay ₹${requiredPaymentAmount} to unlock your quotation PDF (${generatedPageCount} page${generatedPageCount === 1 ? '' : 's'}).`;
+            document.getElementById('pdf-payment-offer').textContent = TEMPORARY_FREE_PDF_ACCESS
+                ? 'Temporary free access: download your quotation PDF now.'
+                : `Pay ₹${requiredPaymentAmount} to unlock your quotation PDF (${generatedPageCount} page${generatedPageCount === 1 ? '' : 's'}).`;
             document.getElementById('pay-pdf-btn').textContent = `Pay ₹${requiredPaymentAmount} to Download PDF`;
+            if (TEMPORARY_FREE_PDF_ACCESS) setPaymentApproval(true);
             updatePdfProcessingProgress(100, 'Finalizing your PDF...');
             hideProcessingOverlay();
             showSuccessOverlay();
@@ -2990,7 +3002,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function downloadPreparedPdf() {
-        if (!paymentApproved) {
+        if (!paymentApproved && !TEMPORARY_FREE_PDF_ACCESS) {
             showNotification('Payment approval is required before downloading the PDF.', true);
             return;
         }
@@ -3006,12 +3018,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const fileNameToUse = preparedPdfDocument.fileName || generatedPdfFileName || buildPdfFileName();
         preparedPdfDocument.pdf.save(fileNameToUse);
+        pdfDownloaded = true;
         
         if (window.FalseQuoteAnalytics) {
             window.FalseQuoteAnalytics.track('quotation_pdf_download', { documentType: 'quotation', documentNumber: quotationData.project.quotationNo });
         }
         
         showNotification('✅ PDF download started.');
+        const whatsappBtn = document.getElementById('whatsapp-after-download-btn');
+        if (whatsappBtn) whatsappBtn.hidden = false;
 
         setTimeout(() => {
             if (downloadBtn) {
@@ -3608,9 +3623,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const downloadReadyPdfBtn = document.getElementById('download-ready-pdf-btn');
         const payPdfBtn = document.getElementById('pay-pdf-btn');
+        const whatsappAfterDownloadBtn = document.getElementById('whatsapp-after-download-btn');
         const backToQuotationBtn = document.getElementById('back-to-quotation-btn');
         if (downloadReadyPdfBtn) downloadReadyPdfBtn.addEventListener('click', downloadPreparedPdf);
         if (payPdfBtn) payPdfBtn.addEventListener('click', startRazorpayPayment);
+        if (whatsappAfterDownloadBtn) whatsappAfterDownloadBtn.addEventListener('click', shareViaWhatsApp);
         if (backToQuotationBtn) {
             backToQuotationBtn.addEventListener('click', () => {
                 hideSuccessOverlay();
