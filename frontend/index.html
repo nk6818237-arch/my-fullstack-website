@@ -122,12 +122,6 @@
                 <h4>Welcome to FalseQuote</h4>
                 <p>Create professional quotations and invoices in minutes.</p>
             </div>
-            <div class="nav__info-card">
-                <p>✨ You are currently browsing as a Guest.</p>
-                <p class="nav__info-card-desc">Create a free account to save your quotations, manage clients, access
-                    projects, sync your data and unlock all premium features.</p>
-            </div>
-
             <!-- Mobile Actions (always at bottom) -->
             <div class="nav__actions--mobile">
                 <a href="admin-dashboard.html" class="button button--fq-secret" data-admin-key="FQ" aria-label="FQ">FQ</a>
@@ -7012,6 +7006,9 @@
                     });
                     localStorage.setItem(this.EVENTS_KEY, JSON.stringify(events));
                     localStorage.setItem(this.VERSION_KEY, '1');
+                    const event = events[events.length - 1];
+                    const baseUrl = window.FALSEQUOTE_API_URL || (window.location.protocol === 'file:' ? 'http://localhost:3000' : window.location.origin);
+                    fetch(`${baseUrl}/api/analytics/events`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(event), keepalive: true }).catch(() => {});
                 } catch (e) {
                     console.warn('Analytics storage unavailable', e);
                 }

@@ -1530,7 +1530,25 @@
                 });
             }
         };
-        document.addEventListener('DOMContentLoaded', () => { Dashboard.init(); PaymentGrowth.bind(); PaymentGrowth.render(); });
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                if (!await AdminAuth.login()) {
+                    document.body.innerHTML = '<main style="font:16px system-ui;padding:40px">Admin login is required.</main>';
+                    return;
+                }
+                await AdminAuth.loadAnalytics();
+                Dashboard.init();
+                document.getElementById('refresh-btn').addEventListener('click', async event => {
+                    event.stopImmediatePropagation();
+                    await AdminAuth.loadAnalytics();
+                    Dashboard.render();
+                }, true);
+                PaymentGrowth.bind();
+                PaymentGrowth.render();
+            } catch (error) {
+                document.body.innerHTML = `<main style="font:16px system-ui;padding:40px">${String(error.message).replace(/[&<>]/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[character]))}</main>`;
+            }
+        });
         /*
          * Integration notes:
          * 1. Quotation creation: quotation.html async generatePdf(), after buildPdfDocument() resolves and showSuccessOverlay() runs.
@@ -1561,7 +1579,33 @@
 
         const PAYMENT_API_URL = getPaymentApiUrl();
         const AdminAuth = {
-            headers() { return {}; }
+            tokenKey: 'falsequote_admin_token',
+            headers() {
+                const token = sessionStorage.getItem(this.tokenKey);
+                return token ? { Authorization: `Bearer ${token}` } : {};
+            },
+            async login() {
+                const existingToken = sessionStorage.getItem(this.tokenKey);
+                if (existingToken) {
+                    const check = await fetch(`${PAYMENT_API_URL}/api/analytics/events`, { headers: this.headers() });
+                    if (check.ok) return true;
+                    sessionStorage.removeItem(this.tokenKey);
+                }
+                const password = window.prompt('Admin password:');
+                if (!password) return false;
+                const response = await fetch(`${PAYMENT_API_URL}/api/admin/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password }) });
+                const result = await parseApiResponse(response);
+                if (!response.ok) throw new Error(result.error || 'Admin login failed.');
+                sessionStorage.setItem(this.tokenKey, result.token);
+                return true;
+            },
+            async loadAnalytics() {
+                const response = await fetch(`${PAYMENT_API_URL}/api/analytics/events`, { headers: this.headers() });
+                const result = await parseApiResponse(response);
+                if (!response.ok) throw new Error(result.error || 'Unable to load analytics.');
+                localStorage.setItem(AnalyticsStorage.EVENTS_KEY, JSON.stringify(result.events || []));
+                return result.events || [];
+            }
         };
 
         async function parseApiResponse(response) {
