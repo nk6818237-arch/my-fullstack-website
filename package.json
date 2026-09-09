@@ -1,0 +1,11 @@
+{
+  "name": "falsequote",
+  "version": "1.0.0",
+  "private": true,
+  "description": "FalseQuote quotation and invoice generator with backend payment API",
+  "scripts": {
+    "start": "node server/server.js",
+    "server": "node server/server.js",
+    "server:dev": "node --watch server/server.js"
+  }
+}

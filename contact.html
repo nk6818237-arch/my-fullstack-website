@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Us & Help Center - FalseQuote</title>
+    <meta name="description" content="Contact FalseQuote Support. Reach us at supporthelpfalsequote@gmail.com for any help with quotations, invoices, payments or refunds.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .contact-page { min-height: 100vh; padding-top: calc(var(--header-height) + 3rem); padding-bottom: 5rem; }
+        .contact-container { max-width: 960px; margin: 0 auto; padding: 0 1.5rem; }
+        .contact-header { text-align: center; margin-bottom: 3.5rem; }
+        .contact-badge {
+            display: inline-block;
+            background: rgba(58, 139, 255, 0.1);
+            border: 1px solid rgba(58, 139, 255, 0.2);
+            color: var(--accent-blue);
+            padding: 0.4rem 1rem;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            margin-bottom: 1rem;
+        }
+        .contact-title { font-size: 2.5rem; font-weight: 700; color: var(--primary-color); margin-bottom: 0.75rem; }
+        .contact-subtitle { color: var(--secondary-color); font-size: 1rem; line-height: 1.6; max-width: 550px; margin: 0 auto; }
+
+        /* Contact Cards Grid */
+        .contact-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.5rem; margin-bottom: 3rem; }
+        .contact-card {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+            transition: border-color 0.3s ease, transform 0.3s ease;
+        }
+        .contact-card:hover { border-color: rgba(58, 139, 255, 0.3); transform: translateY(-4px); }
+        .contact-card__emoji { font-size: 2.5rem; margin-bottom: 1rem; display: block; }
+        .contact-card h3 { font-size: 1.05rem; font-weight: 700; color: var(--primary-color); margin-bottom: 0.5rem; }
+        .contact-card p { color: var(--secondary-color); font-size: 0.875rem; line-height: 1.6; margin-bottom: 1rem; }
+        .contact-card a.contact-link {
+            display: inline-block;
+            color: var(--accent-blue);
+            font-weight: 600;
+            font-size: 0.9rem;
+            padding: 0.5rem 1.25rem;
+            border: 1px solid rgba(58, 139, 255, 0.3);
+            border-radius: 8px;
+            transition: background 0.2s ease;
+            word-break: break-all;
+        }
+        .contact-card a.contact-link:hover { background: rgba(58, 139, 255, 0.1); }
+
+        /* Main Email Box */
+        .main-email-box {
+            background: linear-gradient(135deg, rgba(58, 139, 255, 0.1) 0%, rgba(161, 58, 255, 0.1) 100%);
+            border: 1px solid rgba(58, 139, 255, 0.3);
+            border-radius: 20px;
+            padding: 3rem 2rem;
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        .main-email-box h2 { font-size: 1.5rem; color: var(--primary-color); margin-bottom: 0.75rem; }
+        .main-email-box p { color: var(--secondary-color); font-size: 0.95rem; margin-bottom: 1.5rem; max-width: 500px; margin-left: auto; margin-right: auto; }
+        .email-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            background: rgba(58, 139, 255, 0.15);
+            border: 1px solid rgba(58, 139, 255, 0.35);
+            border-radius: 999px;
+            padding: 0.75rem 1.5rem;
+            color: var(--accent-blue);
+            font-size: 1rem;
+            font-weight: 700;
+            text-decoration: none;
+            transition: background 0.2s ease, transform 0.2s ease;
+            margin-bottom: 1rem;
+        }
+        .email-pill:hover { background: rgba(58, 139, 255, 0.25); transform: scale(1.03); }
+        .response-time {
+            display: inline-block;
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+            color: var(--secondary-color);
+            margin-top: 0.5rem;
+        }
+
+        /* FAQ Section */
+        .faq-section { margin-bottom: 3rem; }
+        .faq-section h2 { font-size: 1.4rem; font-weight: 700; color: var(--primary-color); margin-bottom: 1.5rem; }
+        .faq-item-contact {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 12px;
+            margin-bottom: 0.75rem;
+            overflow: hidden;
+            transition: border-color 0.3s ease;
+        }
+        .faq-item-contact:hover { border-color: rgba(58,139,255,0.2); }
+        .faq-item-contact summary {
+            padding: 1.1rem 1.5rem;
+            color: var(--primary-color);
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            list-style: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .faq-item-contact summary::after { content: '+'; color: var(--accent-blue); font-size: 1.2rem; font-weight: 300; }
+        .faq-item-contact[open] summary::after { content: '−'; }
+        .faq-item-contact p {
+            padding: 0 1.5rem 1.25rem;
+            color: var(--secondary-color);
+            font-size: 0.9rem;
+            line-height: 1.7;
+        }
+
+        /* Back link */
+        .back-link { display: inline-flex; align-items: center; gap: 0.4rem; color: var(--accent-blue); font-size: 0.9rem; font-weight: 500; margin-bottom: 2.5rem; transition: gap 0.2s ease; }
+        .back-link:hover { gap: 0.7rem; }
+        .policy-footer { background: rgba(255,255,255,0.02); border-top: 1px solid rgba(255,255,255,0.06); padding: 2rem 1.5rem; text-align: center; }
+        .policy-footer p { color: var(--secondary-color); font-size: 0.875rem; }
+        .policy-footer a { color: var(--accent-blue); }
+        .policy-footer a:hover { text-decoration: underline; }
+
+        @media (max-width: 600px) {
+            .contact-title { font-size: 1.8rem; }
+            .main-email-box { padding: 2rem 1rem; }
+            .email-pill { font-size: 0.85rem; }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="hero__glow hero__glow--1"></div>
+    <div class="hero__glow hero__glow--2"></div>
+
+    <header class="header is-scrolled">
+        <nav class="nav container">
+            <a href="index.html" class="nav__logo">
+                <div class="nav__logo-icon-wrapper">
+                    <span class="nav__logo-char nav__logo-char--f">F</span>
+                    <span class="nav__logo-char nav__logo-char--q">Q</span>
+                </div>
+                <span class="nav__logo-text">FalseQuote</span>
+            </a>
+            <div class="nav__actions--desktop">
+                <a href="index.html" class="button button--secondary">← Back to Home</a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="contact-page">
+        <div class="contact-container">
+            <a href="index.html" class="back-link">← Back to Home</a>
+
+            <div class="contact-header">
+                <div class="contact-badge">Support</div>
+                <h1 class="contact-title">Contact Us &amp; Help Center</h1>
+                <p class="contact-subtitle">Have a question or need help? We're here for you. Reach out through email and we'll respond within 24–48 hours.</p>
+            </div>
+
+            <!-- Main Email CTA -->
+            <div class="main-email-box">
+                <h2>📬 Get In Touch</h2>
+                <p>For all support queries including payment issues, refund requests, technical problems, or general questions — email us directly:</p>
+                <a href="mailto:supporthelpfalsequote@gmail.com" class="email-pill">
+                    ✉️ supporthelpfalsequote@gmail.com
+                </a>
+                <br>
+                <span class="response-time">⏱ Average response time: 24–48 working hours</span>
+            </div>
+
+            <!-- Contact Cards -->
+            <div class="contact-cards">
+                <div class="contact-card">
+                    <span class="contact-card__emoji">💳</span>
+                    <h3>Payment Issues</h3>
+                    <p>Payment deducted but PDF not received? Duplicate charge? We'll fix it fast.</p>
+                    <a href="mailto:supporthelpfalsequote@gmail.com?subject=Payment Issue - FalseQuote" class="contact-link">Email Support</a>
+                </div>
+
+                <div class="contact-card">
+                    <span class="contact-card__emoji">💰</span>
+                    <h3>Refund Requests</h3>
+                    <p>Eligible for a refund? Email us with your Razorpay Payment ID and we'll process it.</p>
+                    <a href="mailto:supporthelpfalsequote@gmail.com?subject=Refund Request - FalseQuote" class="contact-link">Request Refund</a>
+                </div>
+
+                <div class="contact-card">
+                    <span class="contact-card__emoji">🛠️</span>
+                    <h3>Technical Support</h3>
+                    <p>Quotation not loading? PDF export broken? Let us know and we'll debug it.</p>
+                    <a href="mailto:supporthelpfalsequote@gmail.com?subject=Technical Issue - FalseQuote" class="contact-link">Report Issue</a>
+                </div>
+
+                <div class="contact-card">
+                    <span class="contact-card__emoji">💡</span>
+                    <h3>Feature Requests</h3>
+                    <p>Want a new template, feature, or integration? We'd love to hear your ideas!</p>
+                    <a href="mailto:supporthelpfalsequote@gmail.com?subject=Feature Request - FalseQuote" class="contact-link">Share Idea</a>
+                </div>
+
+                <div class="contact-card">
+                    <span class="contact-card__emoji">🔐</span>
+                    <h3>Privacy &amp; Data</h3>
+                    <p>Questions about your data? Want to delete your records? We'll help you.</p>
+                    <a href="mailto:supporthelpfalsequote@gmail.com?subject=Privacy Request - FalseQuote" class="contact-link">Contact Privacy</a>
+                </div>
+
+                <div class="contact-card">
+                    <span class="contact-card__emoji">🤝</span>
+                    <h3>Business Enquiry</h3>
+                    <p>Interested in a partnership, bulk pricing, or custom integrations? Let's talk.</p>
+                    <a href="mailto:supporthelpfalsequote@gmail.com?subject=Business Enquiry - FalseQuote" class="contact-link">Get In Touch</a>
+                </div>
+            </div>
+
+            <!-- FAQ Section -->
+            <div class="faq-section">
+                <h2>❓ Frequently Asked Questions</h2>
+
+                <details class="faq-item-contact">
+                    <summary>How much does it cost to download a PDF?</summary>
+                    <p>FalseQuote charges <strong>₹30 for 1–2 PDF pages</strong>, then adds ₹10 for each page after the second. This applies to both Quotations and Invoices. Payment is processed through Razorpay.</p>
+                </details>
+
+                <details class="faq-item-contact">
+                    <summary>I paid but didn't receive the PDF. What should I do?</summary>
+                    <p>Please email us at <a href="mailto:supporthelpfalsequote@gmail.com" style="color:var(--accent-blue);">supporthelpfalsequote@gmail.com</a> with your Razorpay Payment ID (starts with "pay_"). We'll verify and either generate your PDF manually or issue a full refund within 5–7 working days.</p>
+                </details>
+
+                <details class="faq-item-contact">
+                    <summary>How do I request a refund?</summary>
+                    <p>Email us at <a href="mailto:supporthelpfalsequote@gmail.com?subject=Refund%20Request%20-%20FalseQuote" style="color:var(--accent-blue);">supporthelpfalsequote@gmail.com</a> with subject "Refund Request – [Your Payment ID]" within 7 days of the transaction. Include your name, payment ID, and reason. We'll respond within 24–48 hours. For full details, see our <a href="refund-policy.html" style="color:var(--accent-blue);">Refund Policy</a>.</p>
+                </details>
+
+                <details class="faq-item-contact">
+                    <summary>Is my payment information secure?</summary>
+                    <p>Absolutely. All payments are processed by <strong>Razorpay</strong>, a PCI-DSS Level 1 compliant gateway. FalseQuote never stores your card details, UPI PIN, or any payment credentials. All transactions are encrypted with SSL/TLS.</p>
+                </details>
+
+                <details class="faq-item-contact">
+                    <summary>Can I edit my quotation after generating the PDF?</summary>
+                    <p>Yes! FalseQuote stores your quotation data in your browser's local storage. You can edit and regenerate documents. Each new PDF download is priced by page count: ₹30 for 1–2 pages, plus ₹10 for every page after the second.</p>
+                </details>
+
+                <details class="faq-item-contact">
+                    <summary>What if I accidentally closed the page after paying?</summary>
+                    <p>Your data is saved in your browser's local storage. Reopen the quotation/invoice tool and your data should be intact. If you paid but closed before downloading, contact us with your Payment ID and we'll assist you.</p>
+                </details>
+
+                <details class="faq-item-contact">
+                    <summary>Is my business data stored on your servers?</summary>
+                    <p>No. Your quotation and invoice data is stored exclusively in your browser's local storage (localStorage). It does not get uploaded to our servers. Only payment transaction records (not your document content) are stored on our secure database for compliance purposes.</p>
+                </details>
+
+                <details class="faq-item-contact">
+                    <summary>How do I contact FalseQuote support?</summary>
+                    <p>Email us at <a href="mailto:supporthelpfalsequote@gmail.com" style="color:var(--accent-blue);">supporthelpfalsequote@gmail.com</a>. We respond within 24–48 working hours (Monday–Saturday).</p>
+                </details>
+            </div>
+
+            <!-- Policy Links -->
+            <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; padding: 1.5rem 2rem; text-align: center;">
+                <p style="color: var(--secondary-color); font-size: 0.9rem; margin-bottom: 0.75rem;">Also read our legal policies:</p>
+                <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                    <a href="privacy-policy.html" style="color: var(--accent-blue); font-size: 0.9rem; padding: 0.4rem 1rem; border: 1px solid rgba(58,139,255,0.2); border-radius: 8px;">🔒 Privacy Policy</a>
+                    <a href="terms-and-conditions.html" style="color: var(--accent-blue); font-size: 0.9rem; padding: 0.4rem 1rem; border: 1px solid rgba(58,139,255,0.2); border-radius: 8px;">📋 Terms &amp; Conditions</a>
+                    <a href="refund-policy.html" style="color: var(--accent-blue); font-size: 0.9rem; padding: 0.4rem 1rem; border: 1px solid rgba(58,139,255,0.2); border-radius: 8px;">💰 Refund Policy</a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="policy-footer">
+        <p>© 2026 FalseQuote. All Rights Reserved. &nbsp;|&nbsp;
+            <a href="privacy-policy.html">Privacy Policy</a> &nbsp;|&nbsp;
+            <a href="terms-and-conditions.html">Terms &amp; Conditions</a> &nbsp;|&nbsp;
+            <a href="refund-policy.html">Refund Policy</a> &nbsp;|&nbsp;
+            <a href="contact.html">Contact Us</a>
+        </p>
+    </footer>
+</body>
+
+</html>

@@ -1,0 +1,1643 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FalseQuote Admin Analytics</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg: #070d17;
+            --panel: rgba(13, 24, 39, .84);
+            --border: rgba(148, 163, 184, .18);
+            --muted: #9aa8bb;
+            --text: #f8fafc;
+            --blue: #3b82f6;
+            --purple: #a855f7;
+            --green: #22c55e;
+            --orange: #f59e0b;
+            --cyan: #06b6d4;
+            --pink: #ec4899;
+            --danger: #ef4444;
+            --shadow: 0 18px 50px rgba(0, 0, 0, .34)
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            color: var(--text);
+            background: radial-gradient(circle at top left, rgba(59, 130, 246, .22), transparent 34rem), radial-gradient(circle at top right, rgba(168, 85, 247, .18), transparent 34rem), linear-gradient(145deg, #06101e 0%, #070d17 45%, #050912 100%)
+        }
+
+        button,
+        input {
+            font: inherit
+        }
+
+        button {
+            cursor: pointer
+        }
+
+        button:focus-visible,
+        input:focus-visible {
+            outline: 2px solid var(--cyan);
+            outline-offset: 2px
+        }
+
+        .shell {
+            width: min(1560px, calc(100% - 32px));
+            margin: 0 auto;
+            padding: 20px 0 28px
+        }
+
+        .admin-lock {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            display: grid;
+            place-items: center;
+            padding: 20px;
+            background: #050912;
+        }
+
+        .admin-lock-card {
+            width: min(420px, 100%);
+            padding: 28px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: linear-gradient(145deg, rgba(15, 27, 44, .98), rgba(8, 17, 31, .98));
+            box-shadow: var(--shadow);
+        }
+
+        .admin-lock-card h2 { margin: 0 0 8px; }
+        .admin-lock-card p { color: var(--muted); line-height: 1.5; }
+        .admin-lock-card label { display: grid; gap: 6px; margin-top: 18px; color: var(--muted); font-size: .85rem; }
+        .admin-lock-card input { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; color: var(--text); background: rgba(5, 12, 23, .8); }
+        .admin-lock-card button { width: 100%; margin-top: 14px; padding: 12px; border: 0; border-radius: 8px; color: #fff; background: var(--blue); font-weight: 700; }
+        .admin-lock-message { min-height: 20px; margin-top: 12px; color: #fca5a5; }
+
+        .topbar,
+        .panel,
+        .kpi-card,
+        .control-band {
+            border: 1px solid var(--border);
+            background: linear-gradient(145deg, rgba(15, 27, 44, .92), rgba(8, 17, 31, .72));
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(14px)
+        }
+
+        .topbar {
+            min-height: 76px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 18px 22px;
+            position: sticky;
+            top: 12px;
+            z-index: 10
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            min-width: 0
+        }
+
+        .brand-mark {
+            width: 44px;
+            height: 44px;
+            display: grid;
+            place-items: center;
+            border-radius: 50%;
+            border: 2px solid var(--purple);
+            color: #dbeafe;
+            font-weight: 800;
+            box-shadow: inset 0 0 22px rgba(59, 130, 246, .24), 0 0 24px rgba(168, 85, 247, .22)
+        }
+
+        .brand h1 {
+            margin: 0;
+            font-size: clamp(1.2rem, 2.4vw, 1.75rem);
+            letter-spacing: 0
+        }
+
+        .brand p,
+        .hero p,
+        .mini-label,
+        .muted {
+            color: var(--muted)
+        }
+
+        .brand p {
+            margin: 3px 0 0;
+            font-size: .78rem;
+            letter-spacing: .18em;
+            text-transform: uppercase
+        }
+
+        .timebar {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+            gap: 10px
+        }
+
+        .notification-trigger {
+            position: relative;
+            width: 40px;
+            height: 40px;
+            display: inline-grid;
+            place-items: center;
+            border: 1px solid var(--border);
+            border-radius: 50%;
+            color: var(--text);
+            background: rgba(5, 12, 23, .62);
+        }
+
+        .notification-trigger:hover {
+            border-color: var(--cyan);
+            color: var(--cyan);
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            min-width: 18px;
+            height: 18px;
+            padding: 0 4px;
+            display: grid;
+            place-items: center;
+            border-radius: 999px;
+            color: #fff;
+            background: var(--danger);
+            font-size: .65rem;
+            font-weight: 800;
+        }
+
+        .notification-popover {
+            position: fixed;
+            top: 94px;
+            right: max(16px, calc((100vw - 1560px) / 2));
+            z-index: 20;
+            width: min(430px, calc(100vw - 32px));
+            max-height: min(520px, calc(100vh - 120px));
+            overflow: auto;
+            padding: 14px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: #0b1728;
+            box-shadow: var(--shadow);
+        }
+
+        .notification-popover-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        .notification-popover-head button {
+            border: 0;
+            color: var(--muted);
+            background: transparent;
+            font-size: 1.35rem;
+        }
+
+        .notification-popover-list .status-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        @media (max-width: 640px) {
+            .topbar { align-items: flex-start; }
+            .timebar { gap: 6px; }
+            .timebar .time-pill { display: none; }
+            .notification-popover { top: 82px; }
+        }
+
+        .time-pill,
+        .status-pill,
+        .segmented,
+        .date-input,
+        .action-btn {
+            border: 1px solid var(--border);
+            background: rgba(5, 12, 23, .62);
+            color: var(--text);
+            border-radius: 8px
+        }
+
+        .time-pill,
+        .status-pill {
+            min-height: 38px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            color: #d9e4f3;
+            font-size: .9rem
+        }
+
+        .hero {
+            display: flex;
+            justify-content: space-between;
+            gap: 18px;
+            align-items: end;
+            padding: 26px 10px 14px
+        }
+
+        .hero h2 {
+            margin: 0 0 6px;
+            font-size: clamp(1.35rem, 2.5vw, 2rem)
+        }
+
+        .hero p {
+            margin: 0
+        }
+
+        .control-band {
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 14px
+        }
+
+        .segmented {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            padding: 5px
+        }
+
+        .filter-btn,
+        .download-filter {
+            min-height: 38px;
+            border: 0;
+            border-radius: 7px;
+            color: #dbe7f5;
+            background: transparent;
+            padding: 8px 13px
+        }
+
+        .filter-btn.active,
+        .download-filter.active {
+            background: linear-gradient(135deg, #2563eb, #3b82f6);
+            color: #fff;
+            box-shadow: 0 10px 24px rgba(37, 99, 235, .28)
+        }
+
+        .custom-range {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap
+        }
+
+        .custom-range.active {
+            display: flex
+        }
+
+        .date-input {
+            min-height: 38px;
+            padding: 8px 10px;
+            color-scheme: dark
+        }
+
+        .status-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap
+        }
+
+        .status-pill {
+            font-weight: 700;
+            font-size: .78rem;
+            letter-spacing: .08em;
+            text-transform: uppercase
+        }
+
+        .status-pill.test {
+            color: #fbbf24;
+            border-color: rgba(245, 158, 11, .42)
+        }
+
+        .storage-warning {
+            display: none;
+            color: #fecaca;
+            border-color: rgba(239, 68, 68, .45)
+        }
+
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(6, minmax(0, 1fr));
+            gap: 14px;
+            margin: 14px 0
+        }
+
+        .kpi-card {
+            --accent: var(--blue);
+            min-height: 150px;
+            border-radius: 8px;
+            padding: 15px;
+            position: relative;
+            overflow: hidden
+        }
+
+        .kpi-card:before {
+            content: "";
+            position: absolute;
+            inset: auto 0 0;
+            height: 58px;
+            background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--accent) 24%, transparent));
+            pointer-events: none
+        }
+
+        .kpi-top {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            align-items: start;
+            position: relative
+        }
+
+        .kpi-icon {
+            width: 42px;
+            height: 42px;
+            display: grid;
+            place-items: center;
+            border-radius: 8px;
+            background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 58%, #fff));
+            box-shadow: 0 12px 26px color-mix(in srgb, var(--accent) 28%, transparent);
+            font-weight: 800
+        }
+
+        .kpi-label {
+            margin: 0;
+            font-size: .74rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            line-height: 1.3
+        }
+
+        .kpi-value {
+            margin: 12px 0 5px;
+            font-size: clamp(1.8rem, 3vw, 2.35rem);
+            font-weight: 800;
+            position: relative
+        }
+
+        .trend {
+            color: var(--muted);
+            font-size: .82rem;
+            position: relative
+        }
+
+        .trend.up {
+            color: #86efac
+        }
+
+        .trend.down {
+            color: #fca5a5
+        }
+
+        .spark {
+            width: 100%;
+            height: 34px;
+            position: relative;
+            margin-top: 8px
+        }
+
+        .grid {
+            display: grid;
+            gap: 14px
+        }
+
+        .charts-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr))
+        }
+
+        .lower-grid {
+            grid-template-columns: 1.05fr 1fr 1.1fr;
+            margin-top: 14px
+        }
+
+        .bottom-grid {
+            grid-template-columns: .9fr 1.15fr .9fr;
+            margin-top: 14px
+        }
+
+        .panel {
+            border-radius: 8px;
+            padding: 14px;
+            min-width: 0
+        }
+
+        .panel-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px
+        }
+
+        .panel h3 {
+            margin: 0;
+            font-size: 1rem
+        }
+
+        .chart-box {
+            height: 230px;
+            position: relative
+        }
+
+        .empty-state {
+            height: 100%;
+            min-height: 138px;
+            display: grid;
+            place-items: center;
+            text-align: center;
+            color: var(--muted);
+            border: 1px dashed rgba(148, 163, 184, .22);
+            border-radius: 8px;
+            background: rgba(2, 8, 18, .22)
+        }
+
+        .visitor-wrap,
+        .revenue-wrap,
+        .doc-grid {
+            display: grid;
+            gap: 12px
+        }
+
+        .visitor-wrap {
+            grid-template-columns: 190px 1fr;
+            align-items: center
+        }
+
+        .donut {
+            width: 168px;
+            aspect-ratio: 1;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            background: conic-gradient(var(--blue) var(--unique-deg, 0deg), var(--green) 0 var(--new-deg, 0deg), var(--purple) 0 var(--returning-deg, 0deg), rgba(148, 163, 184, .16) 0);
+            margin: auto
+        }
+
+        .donut-core {
+            width: 92px;
+            aspect-ratio: 1;
+            border-radius: 50%;
+            background: #07101e;
+            display: grid;
+            place-items: center;
+            text-align: center;
+            box-shadow: inset 0 0 0 1px var(--border)
+        }
+
+        .donut-core strong {
+            font-size: 1.7rem
+        }
+
+        .legend-row,
+        .metric-row,
+        .doc-row,
+        .day-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            border-bottom: 1px solid rgba(148, 163, 184, .1);
+            padding: 9px 0
+        }
+
+        .dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px
+        }
+
+        .funnel {
+            display: grid;
+            gap: 9px
+        }
+
+        .funnel-step {
+            display: grid;
+            grid-template-columns: 70px 1fr 58px;
+            align-items: center;
+            gap: 10px
+        }
+
+        .funnel-bar {
+            min-height: 38px;
+            border-radius: 7px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--step-color), color-mix(in srgb, var(--step-color) 52%, #fff));
+            width: max(68px, var(--step-width, 100%))
+        }
+
+        .doc-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr))
+        }
+
+        .doc-card {
+            border: 1px solid rgba(148, 163, 184, .14);
+            background: rgba(2, 8, 18, .28);
+            border-radius: 8px;
+            padding: 12px
+        }
+
+        .rate-ring {
+            width: 92px;
+            aspect-ratio: 1;
+            border-radius: 50%;
+            margin: 13px auto 0;
+            display: grid;
+            place-items: center;
+            background: conic-gradient(var(--accent) var(--rate, 0deg), rgba(148, 163, 184, .13) 0)
+        }
+
+        .rate-ring span {
+            width: 62px;
+            aspect-ratio: 1;
+            border-radius: 50%;
+            background: #07101e;
+            display: grid;
+            place-items: center;
+            font-weight: 800
+        }
+
+        .revenue-wrap {
+            grid-template-columns: .55fr 1fr;
+            align-items: center
+        }
+
+        .revenue-total {
+            color: #fbbf24;
+            font-size: 1.85rem;
+            font-weight: 800
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse
+        }
+
+        th,
+        td {
+            padding: 10px 9px;
+            border-bottom: 1px solid rgba(148, 163, 184, .1);
+            text-align: left;
+            font-size: .86rem
+        }
+
+        th {
+            color: #d9e4f3;
+            font-size: .78rem;
+            text-transform: uppercase
+        }
+
+        .badge {
+            display: inline-flex;
+            border-radius: 999px;
+            padding: 4px 9px;
+            background: rgba(34, 197, 94, .13);
+            color: #86efac;
+            font-size: .76rem;
+            font-weight: 700
+        }
+
+        .badge.test {
+            background: rgba(245, 158, 11, .16);
+            color: #fcd34d
+        }
+
+        .day-bar {
+            flex: 1;
+            height: 6px;
+            border-radius: 999px;
+            background: rgba(148, 163, 184, .13);
+            overflow: hidden
+        }
+
+        .day-bar span {
+            display: block;
+            height: 100%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, #f59e0b, #fbbf24);
+            width: var(--w, 0%)
+        }
+
+        .actions-panel {
+            margin-top: 14px;
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap
+        }
+
+        .action-btn {
+            min-height: 42px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 14px
+        }
+
+        .action-btn.primary {
+            background: linear-gradient(135deg, #2563eb, #3b82f6);
+            border-color: rgba(96, 165, 250, .42)
+        }
+
+        .action-btn.warning {
+            border-color: rgba(245, 158, 11, .45);
+            color: #fcd34d
+        }
+
+        .action-btn.danger {
+            border-color: rgba(239, 68, 68, .48);
+            color: #fecaca
+        }
+
+        .footer {
+            color: var(--muted);
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+            padding: 18px 4px 0;
+            font-size: .84rem
+        }
+
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(2, 6, 12, .72);
+            display: none;
+            place-items: center;
+            padding: 20px;
+            z-index: 30
+        }
+
+        .modal-backdrop.active {
+            display: grid
+        }
+
+        .modal {
+            width: min(440px, 100%);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: #0b1524;
+            box-shadow: var(--shadow);
+            padding: 20px
+        }
+
+        .modal h3 {
+            margin: 0 0 8px
+        }
+
+        .modal p {
+            color: var(--muted);
+            margin: 0 0 18px;
+            line-height: 1.5
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            flex-wrap: wrap
+        }
+
+        @media (max-width:1360px) {
+            .shell {
+                width: min(1260px, calc(100% - 20px))
+            }
+
+            .kpi-grid {
+                grid-template-columns: repeat(3, minmax(0, 1fr))
+            }
+
+            .charts-grid,
+            .lower-grid,
+            .bottom-grid {
+                grid-template-columns: 1fr
+            }
+
+            .charts-grid .panel:last-child,
+            .lower-grid .panel:last-child,
+            .bottom-grid .panel:last-child {
+                grid-column: 1/-1
+            }
+
+            .payment-panel {
+                grid-column: 1/-1
+            }
+        }
+
+        @media (max-width:780px) {
+            .shell {
+                width: min(100% - 22px, 1560px);
+                padding-top: 12px
+            }
+
+            .topbar,
+            .hero,
+            .control-band,
+            .actions-panel {
+                align-items: stretch;
+                flex-direction: column
+            }
+
+            .timebar {
+                justify-content: flex-start
+            }
+
+            .kpi-grid,
+            .charts-grid,
+            .lower-grid,
+            .bottom-grid,
+            .visitor-wrap,
+            .revenue-wrap,
+            .doc-grid {
+                grid-template-columns: 1fr
+            }
+
+            .charts-grid .panel:last-child,
+            .lower-grid .panel:last-child,
+            .bottom-grid .panel:last-child {
+                grid-column: auto
+            }
+
+            .payment-panel {
+                grid-column: auto
+            }
+
+            .chart-box {
+                height: 210px
+            }
+
+            th {
+                display: none
+            }
+
+            tr {
+                display: block;
+                border: 1px solid rgba(148, 163, 184, .12);
+                border-radius: 8px;
+                margin-bottom: 10px;
+                padding: 6px;
+                background: rgba(2, 8, 18, .24)
+            }
+
+            td {
+                display: flex;
+                justify-content: space-between;
+                gap: 14px;
+                border: 0
+            }
+
+            td:before {
+                content: attr(data-label);
+                color: var(--muted);
+                font-weight: 700
+            }
+        }
+
+        .payment-range {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap
+        }
+
+        .topbar,
+        .control-band,
+        .panel,
+        .kpi-card {
+            position: relative
+        }
+
+        .topbar:after,
+        .panel:after,
+        .kpi-card:after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            pointer-events: none;
+            background: linear-gradient(135deg, rgba(255, 255, 255, .12), transparent 34%, rgba(255, 255, 255, .04));
+            opacity: .45
+        }
+
+        .topbar {
+            background: linear-gradient(145deg, rgba(11, 22, 38, .96), rgba(6, 14, 27, .88));
+            box-shadow: 0 16px 60px rgba(0, 0, 0, .42), 0 0 0 1px rgba(255, 255, 255, .02) inset
+        }
+
+        .brand h1 {
+            background: linear-gradient(90deg, #fff, #bfdbfe 58%, #d8b4fe);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent
+        }
+
+        .hero {
+            margin: 18px 0 14px;
+            padding: 22px;
+            border: 1px solid rgba(148, 163, 184, .14);
+            border-radius: 8px;
+            background: linear-gradient(135deg, rgba(11, 27, 48, .72), rgba(3, 10, 20, .26));
+            box-shadow: 0 16px 50px rgba(0, 0, 0, .22)
+        }
+
+        .hero h2 {
+            font-weight: 800
+        }
+
+        .overview-chips {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 16px
+        }
+
+        .overview-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            min-height: 34px;
+            padding: 7px 10px;
+            border: 1px solid rgba(148, 163, 184, .16);
+            border-radius: 8px;
+            background: rgba(2, 8, 18, .32);
+            color: #d9e4f3;
+            font-size: .82rem
+        }
+
+        .overview-chip i {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--chip-color, var(--blue));
+            box-shadow: 0 0 18px var(--chip-color, var(--blue))
+        }
+
+        .control-band {
+            background: rgba(5, 13, 25, .78)
+        }
+
+        .segmented {
+            background: rgba(2, 8, 18, .38)
+        }
+
+        .filter-btn,
+        .download-filter,
+        .action-btn {
+            transition: transform .18s ease, border-color .18s ease, background .18s ease, box-shadow .18s ease
+        }
+
+        .filter-btn:hover,
+        .download-filter:hover,
+        .action-btn:hover {
+            transform: translateY(-1px);
+            border-color: rgba(96, 165, 250, .38);
+            background: rgba(59, 130, 246, .12)
+        }
+
+        .kpi-card {
+            min-height: 164px;
+            background: linear-gradient(150deg, color-mix(in srgb, var(--accent) 15%, rgba(12, 24, 41, .92)), rgba(6, 14, 27, .82) 55%, rgba(2, 8, 18, .72));
+            transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-3px);
+            border-color: color-mix(in srgb, var(--accent) 52%, rgba(148, 163, 184, .18));
+            box-shadow: 0 22px 60px rgba(0, 0, 0, .38), 0 0 34px color-mix(in srgb, var(--accent) 16%, transparent)
+        }
+
+        .kpi-icon {
+            font-size: 1.05rem
+        }
+
+        .kpi-value {
+            letter-spacing: 0;
+            text-shadow: 0 12px 34px rgba(0, 0, 0, .34)
+        }
+
+        .panel {
+            background: linear-gradient(150deg, rgba(15, 28, 47, .9), rgba(5, 13, 25, .76));
+            box-shadow: 0 18px 54px rgba(0, 0, 0, .3)
+        }
+
+        .panel:before {
+            content: "";
+            position: absolute;
+            left: 14px;
+            right: 14px;
+            top: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(96, 165, 250, .45), transparent)
+        }
+
+        .panel-head h3 {
+            font-size: 1.02rem;
+            font-weight: 800
+        }
+
+        .chart-box {
+            height: 260px
+        }
+
+        .empty-state {
+            font-weight: 700;
+            background: linear-gradient(145deg, rgba(2, 8, 18, .38), rgba(15, 23, 42, .18));
+            color: #b7c4d6
+        }
+
+        .legend-row strong,
+        .metric-row strong,
+        .doc-row strong,
+        .day-row strong {
+            font-variant-numeric: tabular-nums
+        }
+
+        .funnel-bar {
+            box-shadow: 0 12px 24px color-mix(in srgb, var(--step-color) 22%, transparent)
+        }
+
+        .doc-card {
+            background: linear-gradient(145deg, rgba(2, 8, 18, .3), rgba(15, 23, 42, .25))
+        }
+
+        .rate-ring {
+            box-shadow: 0 0 24px color-mix(in srgb, var(--accent) 16%, transparent)
+        }
+
+        tbody tr:hover {
+            background: rgba(59, 130, 246, .08)
+        }
+
+        .actions-panel {
+            background: linear-gradient(135deg, rgba(8, 20, 36, .92), rgba(5, 13, 25, .78))
+        }
+
+        .modal {
+            background: linear-gradient(145deg, #0f1d31, #07111f)
+        }
+
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(148, 163, 184, .28);
+            border-radius: 999px
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(2, 8, 18, .24)
+        }
+
+        @media (min-width:1241px) {
+            .charts-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 12px
+            }
+
+            .payment-panel {
+                grid-column: 1/-1
+            }
+
+            .lower-grid {
+                grid-template-columns: 1fr 1fr 1.28fr
+            }
+
+            .bottom-grid {
+                grid-template-columns: 1fr 1.35fr 1fr
+            }
+
+            .chart-box {
+                height: 220px
+            }
+
+            .visitors-panel {
+                grid-column: 2
+            }
+
+            .payment-panel {
+                grid-column: 1/-1
+            }
+        }
+
+        @media (max-width:430px) {
+            .brand {
+                align-items: flex-start
+            }
+
+            .brand-mark {
+                width: 38px;
+                height: 38px
+            }
+
+            .segmented,
+            .custom-range {
+                width: 100%
+            }
+
+            .filter-btn,
+            .download-filter,
+            .action-btn,
+            .date-input {
+                width: 100%;
+                justify-content: center
+            }
+
+            .funnel-step {
+                grid-template-columns: 1fr
+            }
+
+            .funnel-bar {
+                width: 100%
+            }
+
+            .hero {
+                padding: 16px
+            }
+
+            .overview-chip {
+                width: 100%;
+                justify-content: center
+            }
+
+            .chart-box {
+                height: 190px
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <main class="shell">
+        <header class="topbar">
+            <div class="brand">
+                <div class="brand-mark" aria-hidden="true">FQ</div>
+                <div>
+                    <h1>FalseQuote Admin Analytics</h1>
+                    <p>Admin</p>
+                </div>
+            </div>
+            <div class="timebar"><span class="time-pill" id="current-date">--</span><span class="time-pill"
+                    id="current-time">--</span><button class="action-btn" id="refresh-btn" type="button"
+                    aria-label="Refresh dashboard">Refresh</button><button class="notification-trigger" id="notification-trigger"
+                    type="button" aria-label="Open payment notifications" aria-expanded="false" title="Payment notifications">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg><span class="notification-badge" id="notification-badge" hidden>0</span>
+                </button></div>
+        </header>
+        <div class="notification-popover" id="notification-popover" hidden>
+            <div class="notification-popover-head"><strong>Payment notifications</strong><button type="button" id="notification-close" aria-label="Close notifications">&times;</button></div>
+            <div id="notification-popover-list" class="notification-popover-list"><span class="muted">Click the bell to load verified payments.</span></div>
+        </div>
+        <section class="hero" aria-labelledby="welcome-title">
+            <div>
+                <h2 id="welcome-title">Good Morning <span aria-hidden="true">&#128075;</span></h2>
+                <p>Daily performance summary for FalseQuote.</p>
+                <div class="overview-chips" aria-label="Analytics status"><span class="overview-chip"
+                        style="--chip-color:var(--green)"><i></i>Live tracking</span><span class="overview-chip"
+                        style="--chip-color:var(--orange)"><i></i>&#8377;30 for 1–2 pages, +&#8377;10 per extra page</span><span
+                        class="overview-chip" style="--chip-color:var(--cyan)"><i></i>Razorpay verified</span></div>
+            </div>
+            <div class="status-row"><span class="status-pill" id="data-mode-badge">Live Data</span><span
+                    class="status-pill test" id="test-data-badge" hidden>Test data present</span><span
+                    class="status-pill storage-warning" id="storage-warning">Analytics storage is unavailable in this
+                    browser.</span></div>
+        </section>
+        <section class="control-band" aria-label="Dashboard controls">
+            <div class="segmented" role="group" aria-label="Date filter"><button class="filter-btn active" type="button"
+                    data-range="today">Today</button><button class="filter-btn" type="button" data-range="7days">7
+                    Days</button><button class="filter-btn" type="button" data-range="month">This Month</button><button
+                    class="filter-btn" type="button" data-range="custom">Custom Range</button></div>
+            <div class="custom-range" id="custom-range"><input class="date-input" id="start-date" type="date"
+                    aria-label="Start date"><input class="date-input" id="end-date" type="date"
+                    aria-label="End date"><button class="action-btn primary" id="apply-range"
+                    type="button">Apply</button></div>
+        </section>
+        <section class="panel" id="payment-notifications" aria-labelledby="payment-notifications-title"
+            style="margin-bottom:14px">
+            <div class="panel-head">
+                <h3 id="payment-notifications-title">Payment Notifications</h3><button class="action-btn"
+                    id="payment-refresh-btn" type="button">Refresh</button>
+            </div>
+            <div id="payment-notifications-list">
+                <p class="muted">Loading payment notifications...</p>
+            </div>
+        </section>
+        <section class="kpi-grid" aria-label="Key performance indicators">
+            <article class="kpi-card" style="--accent:var(--blue)">
+                <div class="kpi-top">
+                    <p class="kpi-label">Quotations</p>
+                    <div class="kpi-icon">Q</div>
+                </div>
+                <div class="kpi-value" id="kpi-quotations">0</div>
+                <div class="trend" id="trend-quotations">No previous data</div><canvas class="spark"
+                    id="spark-quotations"></canvas>
+            </article>
+            <article class="kpi-card" style="--accent:var(--purple)">
+                <div class="kpi-top">
+                    <p class="kpi-label">Invoices</p>
+                    <div class="kpi-icon">I</div>
+                </div>
+                <div class="kpi-value" id="kpi-invoices">0</div>
+                <div class="trend" id="trend-invoices">No previous data</div><canvas class="spark"
+                    id="spark-invoices"></canvas>
+            </article>
+            <article class="kpi-card" style="--accent:var(--green)">
+                <div class="kpi-top">
+                    <p class="kpi-label">PDF Downloads</p>
+                    <div class="kpi-icon">D</div>
+                </div>
+                <div class="kpi-value" id="kpi-downloads">0</div>
+                <div class="trend" id="trend-downloads">No previous data</div><canvas class="spark"
+                    id="spark-downloads"></canvas>
+            </article>
+            <article class="kpi-card" style="--accent:var(--orange)">
+                <div class="kpi-top">
+                    <p class="kpi-label">Revenue</p>
+                    <div class="kpi-icon">&#8377;</div>
+                </div>
+                <div class="kpi-value" id="kpi-revenue">&#8377;0</div>
+                <div class="trend" id="trend-revenue">No previous data</div><canvas class="spark"
+                    id="spark-revenue"></canvas>
+            </article>
+            <article class="kpi-card" style="--accent:var(--cyan)">
+                <div class="kpi-top">
+                    <p class="kpi-label">Visitors</p>
+                    <div class="kpi-icon">V</div>
+                </div>
+                <div class="kpi-value" id="kpi-visitors">0</div>
+                <div class="trend" id="trend-visitors">No previous data</div><canvas class="spark"
+                    id="spark-visitors"></canvas>
+            </article>
+            <article class="kpi-card" style="--accent:var(--pink)">
+                <div class="kpi-top">
+                    <p class="kpi-label">Unique Users</p>
+                    <div class="kpi-icon">U</div>
+                </div>
+                <div class="kpi-value" id="kpi-unique">0</div>
+                <div class="trend" id="trend-unique">No previous data</div><canvas class="spark"
+                    id="spark-unique"></canvas>
+            </article>
+        </section>
+        <section class="grid charts-grid">
+            <article class="panel">
+                <div class="panel-head">
+                    <h3>Quotation Growth</h3>
+                </div>
+                <div class="chart-box" id="quotation-empty"><canvas id="quotation-chart"></canvas></div>
+            </article>
+            <article class="panel">
+                <div class="panel-head">
+                    <h3>Invoice Growth</h3>
+                </div>
+                <div class="chart-box" id="invoice-empty"><canvas id="invoice-chart"></canvas></div>
+            </article>
+            <article class="panel">
+                <div class="panel-head">
+                    <h3>PDF Download Growth</h3>
+                    <div class="segmented" role="group" aria-label="PDF download filter"><button
+                            class="download-filter active" type="button" data-download="all">All</button><button
+                            class="download-filter" type="button" data-download="quotation">Quotations</button><button
+                            class="download-filter" type="button" data-download="invoice">Invoices</button></div>
+                </div>
+                <div class="chart-box" id="download-empty"><canvas id="download-chart"></canvas></div>
+            </article>
+            <article class="panel visitors-panel">
+                <div class="panel-head">
+                    <h3>Visitors Growth</h3>
+                </div>
+                <div class="chart-box" id="visitors-empty"><canvas id="visitors-chart"></canvas></div>
+            </article>
+            <article class="panel payment-panel">
+                <div class="panel-head">
+                    <h3>Payment Growth</h3>
+                    <div class="payment-range" role="group" aria-label="Payment growth filter"><button
+                            class="filter-btn payment-range-btn" type="button" data-range="today">Today</button><button
+                            class="filter-btn payment-range-btn" type="button" data-range="7days">7 Days</button><button
+                            class="filter-btn payment-range-btn" type="button" data-range="month">This
+                            Month</button><button class="filter-btn payment-range-btn active" type="button"
+                            data-range="year">This Year</button></div>
+                </div>
+                <div class="chart-box" id="payment-empty"><canvas id="payment-chart"></canvas></div>
+            </article>
+        </section>
+        <section class="grid lower-grid">
+            <article class="panel">
+                <div class="panel-head">
+                    <h3>Visitor Analytics</h3>
+                </div>
+                <div class="visitor-wrap">
+                    <div class="donut" id="visitor-donut">
+                        <div class="donut-core">
+                            <div><strong id="visitor-total">0</strong><br><span class="mini-label">Visitors</span></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="legend-row"><span><i class="dot" style="background:var(--blue)"></i>Unique
+                                Visitors</span><strong id="visitor-unique">0</strong></div>
+                        <div class="legend-row"><span><i class="dot" style="background:var(--green)"></i>New
+                                Visitors</span><strong id="visitor-new">0</strong></div>
+                        <div class="legend-row"><span><i class="dot" style="background:var(--purple)"></i>Returning
+                                Visitors</span><strong id="visitor-returning">0</strong></div>
+                    </div>
+                </div>
+            </article>
+            <article class="panel">
+                <div class="panel-head">
+                    <h3>User Activity Funnel</h3>
+                </div>
+                <div class="funnel" id="funnel"></div>
+            </article>
+            <article class="panel">
+                <div class="panel-head">
+                    <h3>Estimated Revenue Overview</h3>
+                </div>
+                <div class="revenue-wrap">
+                    <div>
+                        <div class="metric-row"><span>Quotation Downloads</span><strong id="rev-q-downloads">0</strong>
+                        </div>
+                        <div class="metric-row"><span>Quotation Revenue</span><strong id="rev-q">&#8377;0</strong></div>
+                        <div class="metric-row"><span>Invoice Downloads</span><strong id="rev-i-downloads">0</strong>
+                        </div>
+                        <div class="metric-row"><span>Invoice Revenue</span><strong id="rev-i">&#8377;0</strong></div>
+                        <div class="metric-row"><span>Total Downloads</span><strong id="rev-total-downloads">0</strong>
+                        </div>
+                        <div class="revenue-total" id="rev-total">&#8377;0</div>
+                    </div>
+                    <div class="chart-box" id="revenue-empty"><canvas id="revenue-chart"></canvas></div>
+                </div>
+            </article>
+        </section>
+        <section class="grid bottom-grid">
+            <article class="panel">
+                <div class="panel-head">
+                    <h3>Document Analytics</h3>
+                </div>
+                <div class="doc-grid">
+                    <div class="doc-card" style="--accent:var(--blue)">
+                        <h3>Quotation PDFs</h3>
+                        <div class="doc-row"><span>Generated</span><strong id="doc-q-gen">0</strong></div>
+                        <div class="doc-row"><span>Downloaded</span><strong id="doc-q-down">0</strong></div>
+                        <div class="doc-row"><span>Download Rate</span><strong id="doc-q-rate">0%</strong></div>
+                        <div class="rate-ring" id="doc-q-ring"><span>0%</span></div>
+                    </div>
+                    <div class="doc-card" style="--accent:var(--purple)">
+                        <h3>Invoice PDFs</h3>
+                        <div class="doc-row"><span>Generated</span><strong id="doc-i-gen">0</strong></div>
+                        <div class="doc-row"><span>Downloaded</span><strong id="doc-i-down">0</strong></div>
+                        <div class="doc-row"><span>Download Rate</span><strong id="doc-i-rate">0%</strong></div>
+                        <div class="rate-ring" id="doc-i-ring"><span>0%</span></div>
+                    </div>
+                </div>
+            </article>
+            <article class="panel">
+                <div class="panel-head">
+                    <h3>Recent Activity</h3>
+                </div>
+                <table aria-label="Recent activity">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Activity</th>
+                            <th>Document</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="activity-table">
+                        <tr>
+                            <td colspan="4">No activity yet.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </article>
+            <article class="panel">
+                <div class="panel-head">
+                    <h3>Top Performing Days</h3>
+                </div>
+                <div id="top-days">
+                    <div class="empty-state">No revenue data yet.</div>
+                </div>
+            </article>
+        </section>
+        <section class="panel actions-panel" aria-label="Admin controls">
+            <div class="status-row"><button class="action-btn primary" id="export-csv" type="button">Export
+                    CSV</button><button class="action-btn warning" id="add-test-data" type="button">Add Test
+                    Data</button></div>
+            <div class="status-row"><button class="action-btn warning" id="clear-test-data" type="button">Clear Test
+                    Data Only</button><button class="action-btn danger" id="clear-all-data" type="button">Clear
+                    Analytics Data</button></div>
+        </section>
+        <footer class="footer"><span>FalseQuote Analytics</span><span>Estimated PDF Revenue: &#8377;20 per successful
+                download</span><span>Normal analytics retention: 30 days</span><span>PDF/revenue retention: 1
+                year</span></footer>
+    </main>
+    <div class="modal-backdrop" id="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <div class="modal">
+            <h3 id="modal-title">Confirm</h3>
+            <p id="modal-message">Are you sure?</p>
+            <div class="modal-actions" id="modal-actions"></div>
+        </div>
+    </div>
+    <script>
+        const ANALYTICS_VERSION = 1, PDF_PRICE = 20, DAY_MS = 86400000, NORMAL_RETENTION_DAYS = 30, PDF_RETENTION_DAYS = 365, PDF_EVENTS = ['quotation_pdf_download', 'invoice_pdf_download'];
+        const AnalyticsStorage = { EVENTS_KEY: 'falsequote_analytics_events', SETTINGS_KEY: 'falsequote_analytics_settings', VERSION_KEY: 'falsequote_analytics_version', available: true, check() { try { localStorage.setItem('__fq_test__', '1'); localStorage.removeItem('__fq_test__'); localStorage.setItem(this.VERSION_KEY, String(ANALYTICS_VERSION)); this.available = true } catch (e) { this.available = false } return this.available }, getAll() { if (!this.available && !this.check()) return []; try { const parsed = JSON.parse(localStorage.getItem(this.EVENTS_KEY) || '[]'); return Array.isArray(parsed) ? parsed.filter(Analytics.isValidEvent) : [] } catch (e) { localStorage.setItem(this.EVENTS_KEY, '[]'); return [] } }, save(events) { if (!this.available && !this.check()) return false; localStorage.setItem(this.EVENTS_KEY, JSON.stringify(events.filter(Analytics.isValidEvent))); return true }, removeExpired() { const now = Date.now(); const cleaned = this.getAll().filter(event => { const age = (now - new Date(event.timestamp).getTime()) / DAY_MS; return PDF_EVENTS.includes(event.type) ? age <= PDF_RETENTION_DAYS : age <= NORMAL_RETENTION_DAYS }); this.save(cleaned); return cleaned }, clearAll() { this.save([]) }, clearTestData() { this.save(this.getAll().filter(event => !event.isTest)) } };
+        const Analytics = { events: [], isValidEvent(event) { return event && typeof event.type === 'string' && event.timestamp && !Number.isNaN(new Date(event.timestamp).getTime()) }, init() { AnalyticsStorage.check(); this.events = AnalyticsStorage.removeExpired() }, reload() { this.events = AnalyticsStorage.removeExpired(); return this.events }, track(type, data = {}) { const events = AnalyticsStorage.getAll(), now = new Date(); events.push({ id: data.id || 'evt_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8), type, timestamp: data.timestamp || now.toISOString(), date: data.date || this.localDateKey(now), userId: data.userId || this.getVisitorId(), sessionId: data.sessionId || this.getSessionId(), documentType: data.documentType || '', documentNumber: data.documentNumber || '', status: data.status || 'success', isNew: Boolean(data.isNew), isTest: Boolean(data.isTest) }); AnalyticsStorage.save(events); this.reload(); window.dispatchEvent(new Event('falsequote-analytics-updated')) }, getVisitorId() { let id = localStorage.getItem('falsequote_visitor_id'); if (!id) { id = 'visitor_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8); localStorage.setItem('falsequote_visitor_id', id) } return id }, getSessionId() { let id = sessionStorage.getItem('falsequote_session_id'); if (!id) { id = 'session_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8); sessionStorage.setItem('falsequote_session_id', id) } return id }, localDateKey(date) { const d = new Date(date); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` }, rangeFor(mode, custom = {}) { const now = new Date(); let start, end = new Date(now); if (mode === 'today') start = new Date(now.getFullYear(), now.getMonth(), now.getDate()); else if (mode === '7days') start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6); else if (mode === 'month') start = new Date(now.getFullYear(), now.getMonth(), 1); else { start = custom.start ? new Date(custom.start + 'T00:00:00') : new Date(now.getFullYear(), now.getMonth(), now.getDate()); end = custom.end ? new Date(custom.end + 'T23:59:59.999') : end } return { start, end } }, previousRange(range) { const span = range.end.getTime() - range.start.getTime(), end = new Date(range.start.getTime() - 1), start = new Date(end.getTime() - span); return { start, end } }, inRange(event, range) { const time = new Date(event.timestamp).getTime(); return time >= range.start.getTime() && time <= range.end.getTime() }, getEvents(range, types) { const wanted = Array.isArray(types) ? types : types ? [types] : null; return this.events.filter(event => this.inRange(event, range) && (!wanted || wanted.includes(event.type))) }, getStats(range) { const all = this.getEvents(range), q = all.filter(e => e.type === 'quotation_created'), i = all.filter(e => e.type === 'invoice_created'), qd = all.filter(e => e.type === 'quotation_pdf_download'), id = all.filter(e => e.type === 'invoice_pdf_download'), visits = all.filter(e => e.type === 'site_visit'), newVisitors = visits.filter(e => e.isNew).length; return { events: all, quotations: q.length, invoices: i.length, quotationDownloads: qd.length, invoiceDownloads: id.length, downloads: qd.length + id.length, revenue: (qd.length + id.length) * PDF_PRICE, visitors: visits.length, uniqueUsers: new Set(visits.map(e => e.userId).filter(Boolean)).size, newVisitors, returningVisitors: Math.max(0, visits.length - newVisitors), testCount: all.filter(e => e.isTest).length } }, bucketLabels(range, mode) { const labels = []; if (mode === 'today') { for (let h = 0; h <= range.end.getHours(); h++)labels.push(String(h).padStart(2, '0') + ':00') } else { const cursor = new Date(range.start.getFullYear(), range.start.getMonth(), range.start.getDate()), last = new Date(range.end.getFullYear(), range.end.getMonth(), range.end.getDate()); while (cursor <= last) { labels.push(cursor.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })); cursor.setDate(cursor.getDate() + 1) } } return labels }, chartData(range, mode, types, asRevenue = false) { const labels = this.bucketLabels(range, mode), values = new Array(labels.length).fill(0); this.getEvents(range, types).forEach(event => { const d = new Date(event.timestamp), key = mode === 'today' ? String(d.getHours()).padStart(2, '0') + ':00' : d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }), index = labels.indexOf(key); if (index >= 0) values[index] += asRevenue ? PDF_PRICE : 1 }); return { labels, values } }, addTestData() { const base = new Date(), visitorIds = ['test_visitor_1', 'test_visitor_2', 'test_visitor_3', 'test_visitor_4'], rows = []; const add = (daysAgo, hour, type, extra = {}) => { const d = new Date(base.getFullYear(), base.getMonth(), base.getDate() - daysAgo, hour, Math.floor(Math.random() * 45)); rows.push({ id: 'test_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8), type, timestamp: d.toISOString(), date: this.localDateKey(d), userId: visitorIds[Math.floor(Math.random() * visitorIds.length)], sessionId: 'test_session_' + daysAgo + '_' + hour, status: 'success', isTest: true, ...extra }) }; for (let day = 0; day < 7; day++) { add(day, 9, 'site_visit', { isNew: day % 2 === 0 }); add(day, 10, 'quotation_created', { documentType: 'quotation', documentNumber: 'TEST-Q-' + (100 + day) }); if (day % 2 === 0) add(day, 11, 'invoice_created', { documentType: 'invoice', documentNumber: 'TEST-I-' + (100 + day) }); add(day, 12, 'quotation_pdf_download', { documentType: 'quotation', documentNumber: 'TEST-Q-' + (100 + day) }); if (day % 3 === 0) add(day, 13, 'invoice_pdf_download', { documentType: 'invoice', documentNumber: 'TEST-I-' + (100 + day) }) } AnalyticsStorage.save(AnalyticsStorage.getAll().concat(rows)); this.reload() } };
+        const Dashboard = { mode: 'today', custom: {}, downloadFilter: 'all', charts: {}, init() { Analytics.init(); this.bind(); this.tick(); setInterval(() => this.tick(), 30000); this.render() }, bind() { document.getElementById('refresh-btn').addEventListener('click', () => this.render()); document.querySelectorAll('.filter-btn').forEach(button => button.addEventListener('click', () => this.setMode(button))); document.querySelectorAll('.download-filter').forEach(button => button.addEventListener('click', () => { document.querySelectorAll('.download-filter').forEach(b => b.classList.remove('active')); button.classList.add('active'); this.downloadFilter = button.dataset.download; this.renderCharts() })); document.getElementById('apply-range').addEventListener('click', () => { this.custom = { start: document.getElementById('start-date').value, end: document.getElementById('end-date').value }; this.render() }); document.getElementById('export-csv').addEventListener('click', () => this.exportCsv()); document.getElementById('add-test-data').addEventListener('click', () => this.confirm('Add test analytics data for demonstration?', 'Test records will be clearly marked so they are not confused with real analytics.', [{ label: 'Cancel' }, { label: 'Add Test Data', className: 'warning', action: () => { Analytics.addTestData(); this.render() } }])); document.getElementById('clear-test-data').addEventListener('click', () => this.confirm('Clear test data only?', 'This removes only analytics records marked as test data. Real analytics remain.', [{ label: 'Cancel' }, { label: 'Clear Test Data', className: 'warning', action: () => { AnalyticsStorage.clearTestData(); this.render() } }])); document.getElementById('clear-all-data').addEventListener('click', () => this.confirm('Clear analytics data?', 'This will remove analytics records. It will not delete quotations or invoices.', [{ label: 'Cancel' }, { label: 'Clear Analytics', className: 'danger', action: () => { AnalyticsStorage.clearAll(); this.render() } }])); window.addEventListener('storage', event => { if (event.key === AnalyticsStorage.EVENTS_KEY) this.render() }); window.addEventListener('falsequote-analytics-updated', () => this.render()) }, setMode(button) { document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active')); button.classList.add('active'); this.mode = button.dataset.range; document.getElementById('custom-range').classList.toggle('active', this.mode === 'custom'); if (this.mode !== 'custom') this.render() }, tick() { const now = new Date(); document.getElementById('current-date').textContent = now.toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' }); document.getElementById('current-time').textContent = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }); const hour = now.getHours(); document.getElementById('welcome-title').innerHTML = `${hour < 12 ? 'Good Morning' : hour < 17 ? 'Good Afternoon' : 'Good Evening'} <span aria-hidden="true">&#128075;</span>` }, range() { return Analytics.rangeFor(this.mode, this.custom) }, render() { Analytics.reload(); document.getElementById('storage-warning').style.display = AnalyticsStorage.available ? 'none' : 'inline-flex'; const range = this.range(), stats = Analytics.getStats(range); document.getElementById('test-data-badge').hidden = stats.testCount === 0; document.getElementById('data-mode-badge').textContent = stats.testCount ? 'Real + Test Data' : 'Real Data'; this.renderKpis(range, stats); this.renderCharts(); this.renderVisitors(stats); this.renderFunnel(range); this.renderRevenue(stats); this.renderDocs(stats); this.renderActivity(range); this.renderTopDays(range) }, renderKpis(range, stats) { const prev = Analytics.getStats(Analytics.previousRange(range)), items = [['quotations', stats.quotations, prev.quotations, 'quotation_created', false, '#3b82f6'], ['invoices', stats.invoices, prev.invoices, 'invoice_created', false, '#a855f7'], ['downloads', stats.downloads, prev.downloads, PDF_EVENTS, false, '#22c55e'], ['revenue', stats.revenue, prev.revenue, PDF_EVENTS, true, '#f59e0b'], ['visitors', stats.visitors, prev.visitors, 'site_visit', false, '#06b6d4'], ['unique', stats.uniqueUsers, prev.uniqueUsers, 'site_visit', false, '#ec4899']]; items.forEach(([id, current, previous, types, money, color]) => { document.getElementById('kpi-' + id).innerHTML = money ? '&#8377;' + current.toLocaleString() : current.toLocaleString(); const trend = document.getElementById('trend-' + id); trend.className = 'trend'; if (!previous) trend.textContent = 'No previous data'; else { const pct = Math.round((current - previous) / previous * 100); trend.textContent = `${pct >= 0 ? '+' : ''}${pct}% vs previous period`; trend.classList.add(pct >= 0 ? 'up' : 'down') } this.drawSpark('spark-' + id, Analytics.chartData(range, this.mode, types, money).values, color) }) }, renderCharts() { const range = this.range(); this.lineChart('quotation', 'quotation-chart', 'quotation-empty', 'No quotation data yet.', Analytics.chartData(range, this.mode, 'quotation_created'), '#3b82f6', 'Quotations'); this.lineChart('invoice', 'invoice-chart', 'invoice-empty', 'No invoice data yet.', Analytics.chartData(range, this.mode, 'invoice_created'), '#a855f7', 'Invoices'); const downloadTypes = this.downloadFilter === 'quotation' ? 'quotation_pdf_download' : this.downloadFilter === 'invoice' ? 'invoice_pdf_download' : PDF_EVENTS; this.lineChart('download', 'download-chart', 'download-empty', 'No PDF downloads yet.', Analytics.chartData(range, this.mode, downloadTypes), '#22c55e', 'Downloads'); this.lineChart('visitors', 'visitors-chart', 'visitors-empty', 'No visitor data yet.', Analytics.chartData(range, this.mode, 'site_visit'), '#06b6d4', 'Visitors'); this.lineChart('revenue', 'revenue-chart', 'revenue-empty', 'No revenue data yet.', Analytics.chartData(range, this.mode, PDF_EVENTS, true), '#f59e0b', 'Estimated Revenue') }, lineChart(id, canvasId, boxId, emptyText, data, color, label) { const box = document.getElementById(boxId), hasData = data.values.some(value => value > 0); if (!hasData || !window.Chart) { if (this.charts[id]) { this.charts[id].destroy(); delete this.charts[id] } box.innerHTML = `<div class="empty-state">${emptyText}</div>`; return } if (!document.getElementById(canvasId)) box.innerHTML = `<canvas id="${canvasId}"></canvas>`; const ctx = document.getElementById(canvasId).getContext('2d'); if (this.charts[id]) { this.charts[id].data.labels = data.labels; this.charts[id].data.datasets[0].data = data.values; this.charts[id].update(); return } const gradient = ctx.createLinearGradient(0, 0, 0, 220); gradient.addColorStop(0, color + '55'); gradient.addColorStop(1, color + '00'); this.charts[id] = new Chart(ctx, { type: 'line', data: { labels: data.labels, datasets: [{ label, data: data.values, borderColor: color, backgroundColor: gradient, fill: true, tension: .38, borderWidth: 2, pointRadius: 3 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { color: 'rgba(148,163,184,.08)' }, ticks: { color: '#9aa8bb' } }, y: { beginAtZero: true, grid: { color: 'rgba(148,163,184,.1)' }, ticks: { color: '#9aa8bb', precision: 0 } } } } }) }, renderVisitors(stats) { document.getElementById('visitor-total').textContent = stats.visitors; document.getElementById('visitor-unique').textContent = stats.uniqueUsers; document.getElementById('visitor-new').textContent = stats.newVisitors; document.getElementById('visitor-returning').textContent = stats.returningVisitors; const total = Math.max(1, stats.uniqueUsers + stats.newVisitors + stats.returningVisitors), uniqueDeg = stats.uniqueUsers / total * 360, newDeg = uniqueDeg + stats.newVisitors / total * 360, returningDeg = newDeg + stats.returningVisitors / total * 360; document.getElementById('visitor-donut').style.cssText = `--unique-deg:${uniqueDeg}deg;--new-deg:${newDeg}deg;--returning-deg:${returningDeg}deg` }, renderFunnel(range) { const visits = new Set(Analytics.getEvents(range, 'site_visit').map(e => e.userId)).size, q = new Set(Analytics.getEvents(range, 'quotation_created').map(e => e.userId)).size, i = new Set(Analytics.getEvents(range, 'invoice_created').map(e => e.userId)).size, d = new Set(Analytics.getEvents(range, PDF_EVENTS).map(e => e.userId)).size, steps = [['Visitors', visits, 100, '#3b82f6'], ['Quotation Creators', q, visits ? q / visits * 100 : 0, '#22c55e'], ['Invoice Creators', i, visits ? i / visits * 100 : 0, '#a855f7'], ['PDF Downloaders', d, visits ? d / visits * 100 : 0, '#f59e0b']]; document.getElementById('funnel').innerHTML = steps.map(([label, value, pct, color]) => `<div class="funnel-step"><span>${label}</span><div class="funnel-bar" style="--step-color:${color};--step-width:${Math.max(24, pct)}%">${value}</div><strong>${Math.round(pct)}%</strong></div>`).join('') }, renderRevenue(stats) { document.getElementById('rev-q-downloads').textContent = stats.quotationDownloads; document.getElementById('rev-q').innerHTML = '&#8377;' + (stats.quotationDownloads * PDF_PRICE).toLocaleString(); document.getElementById('rev-i-downloads').textContent = stats.invoiceDownloads; document.getElementById('rev-i').innerHTML = '&#8377;' + (stats.invoiceDownloads * PDF_PRICE).toLocaleString(); document.getElementById('rev-total-downloads').textContent = stats.downloads; document.getElementById('rev-total').innerHTML = '&#8377;' + stats.revenue.toLocaleString() }, renderDocs(stats) { const qRate = stats.quotations ? Math.round(stats.quotationDownloads / stats.quotations * 100) : 0, iRate = stats.invoices ? Math.round(stats.invoiceDownloads / stats.invoices * 100) : 0; document.getElementById('doc-q-gen').textContent = stats.quotations; document.getElementById('doc-q-down').textContent = stats.quotationDownloads; document.getElementById('doc-q-rate').textContent = qRate + '%'; document.getElementById('doc-i-gen').textContent = stats.invoices; document.getElementById('doc-i-down').textContent = stats.invoiceDownloads; document.getElementById('doc-i-rate').textContent = iRate + '%'; document.getElementById('doc-q-ring').style.setProperty('--rate', Math.min(360, qRate * 3.6) + 'deg'); document.getElementById('doc-i-ring').style.setProperty('--rate', Math.min(360, iRate * 3.6) + 'deg'); document.querySelector('#doc-q-ring span').textContent = qRate + '%'; document.querySelector('#doc-i-ring span').textContent = iRate + '%' }, renderActivity(range) { const names = { site_visit: 'Site Visit', quotation_created: 'Quotation Created', invoice_created: 'Invoice Created', quotation_pdf_download: 'Quotation PDF Download', invoice_pdf_download: 'Invoice PDF Download' }, rows = Analytics.getEvents(range).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 8); document.getElementById('activity-table').innerHTML = rows.length ? rows.map(event => `<tr><td data-label="Time">${new Date(event.timestamp).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</td><td data-label="Activity">${names[event.type] || event.type}</td><td data-label="Document">${event.documentNumber || '-'}</td><td data-label="Status"><span class="badge ${event.isTest ? 'test' : ''}">${event.isTest ? 'Test' : event.status}</span></td></tr>`).join('') : '<tr><td colspan="4">No activity yet.</td></tr>' }, renderTopDays(range) { const days = {}; Analytics.getEvents(range, PDF_EVENTS).forEach(event => { const label = new Date(event.timestamp).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }); days[label] = (days[label] || 0) + PDF_PRICE }); const sorted = Object.entries(days).sort((a, b) => b[1] - a[1]).slice(0, 5), max = Math.max(1, ...sorted.map(([, value]) => value)); document.getElementById('top-days').innerHTML = sorted.length ? sorted.map(([day, value], index) => `<div class="day-row"><span>${index + 1}. ${day}</span><div class="day-bar"><span style="--w:${Math.round(value / max * 100)}%"></span></div><strong>&#8377;${value.toLocaleString()}</strong></div>`).join('') : '<div class="empty-state">No revenue data yet.</div>' }, drawSpark(id, values, color) { const canvas = document.getElementById(id), ctx = canvas.getContext('2d'), ratio = window.devicePixelRatio || 1, width = canvas.width = canvas.offsetWidth * ratio, height = canvas.height = canvas.offsetHeight * ratio; ctx.clearRect(0, 0, width, height); if (!values.some(Boolean)) return; const max = Math.max(...values, 1); ctx.strokeStyle = color; ctx.lineWidth = 2 * ratio; ctx.beginPath(); values.forEach((value, index) => { const x = values.length === 1 ? 0 : index / (values.length - 1) * width, y = height - value / max * (height - 4 * ratio) - 2 * ratio; if (index === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y) }); ctx.stroke() }, exportCsv() { const rows = Analytics.getEvents(this.range()); if (!rows.length) { alert('No data to export.'); return } const headers = ['Date', 'Time', 'Event', 'User ID', 'Session ID', 'Document Type', 'Document Number', 'Status', 'Estimated Revenue', 'Test/Real'], csvRows = rows.map(event => { const d = new Date(event.timestamp); return [d.toLocaleDateString(), d.toLocaleTimeString(), event.type, event.userId || '', event.sessionId || '', event.documentType || '', event.documentNumber || '', event.status || '', PDF_EVENTS.includes(event.type) ? PDF_PRICE : 0, event.isTest ? 'Test' : 'Real'].map(value => `"${String(value).replaceAll('"', '""')}"`).join(',') }); const blob = new Blob([[headers.join(','), ...csvRows].join('\n')], { type: 'text/csv;charset=utf-8;' }), link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = 'falsequote_analytics_' + this.mode + '.csv'; link.click(); URL.revokeObjectURL(link.href) }, confirm(title, message, buttons) { const backdrop = document.getElementById('modal-backdrop'); document.getElementById('modal-title').textContent = title; document.getElementById('modal-message').textContent = message; document.getElementById('modal-actions').innerHTML = buttons.map((button, index) => `<button class="action-btn ${button.className || ''}" data-index="${index}" type="button">${button.label}</button>`).join(''); document.getElementById('modal-actions').querySelectorAll('button').forEach(button => button.addEventListener('click', () => { const config = buttons[Number(button.dataset.index)]; backdrop.classList.remove('active'); if (config.action) config.action() })); backdrop.classList.add('active') } };
+        const PaymentGrowth = {
+            range: 'year',
+            bind() {
+                document.querySelectorAll('.payment-range-btn').forEach(button => {
+                    button.addEventListener('click', () => {
+                        document.querySelectorAll('.payment-range-btn').forEach(btn => btn.classList.toggle('active', btn === button));
+                        this.range = button.dataset.range || 'year';
+                        this.render();
+                    });
+                });
+                window.addEventListener('falsequote-analytics-updated', () => this.render());
+            },
+            rangeFor(mode) {
+                const now = new Date();
+                let start = new Date(now), end = new Date(now);
+                if (mode === 'today') {
+                    start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                    end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+                } else if (mode === '7days') {
+                    start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6);
+                    start.setHours(0, 0, 0, 0);
+                    end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+                } else if (mode === 'month') {
+                    start = new Date(now.getFullYear(), now.getMonth(), 1);
+                    end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+                } else {
+                    start = new Date(now.getFullYear(), 0, 1);
+                    end = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
+                }
+                return { start, end };
+            },
+            buildBuckets(mode, start, end) {
+                const buckets = [];
+                const now = new Date();
+                if (mode === 'today') {
+                    for (let i = 23; i >= 0; i--) {
+                        const d = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours() - i, 0, 0, 0);
+                        const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}-${d.getHours()}`;
+                        buckets.push({ key, label: `${String(d.getHours()).padStart(2, '0')}:00`, value: 0 });
+                    }
+                } else if (mode === '7days') {
+                    for (let i = 6; i >= 0; i--) {
+                        const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i, 0, 0, 0, 0);
+                        const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+                        buckets.push({ key, label: d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }), value: 0 });
+                    }
+                } else if (mode === 'month') {
+                    const cursor = new Date(start);
+                    while (cursor <= end) {
+                        const key = `${cursor.getFullYear()}-${cursor.getMonth()}-${cursor.getDate()}`;
+                        buckets.push({ key, label: String(cursor.getDate()), value: 0 });
+                        cursor.setDate(cursor.getDate() + 1);
+                    }
+                } else {
+                    for (let i = 11; i >= 0; i--) {
+                        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                        const key = `${d.getFullYear()}-${d.getMonth()}`;
+                        buckets.push({ key, label: d.toLocaleString('en-US', { month: 'short' }), value: 0 });
+                    }
+                }
+                return buckets;
+            },
+            render() {
+                const canvas = document.getElementById('payment-chart');
+                if (!canvas) return;
+                if (window.paymentGrowthChart instanceof Chart) { window.paymentGrowthChart.destroy(); }
+
+                const { start, end } = this.rangeFor(this.range);
+                const buckets = this.buildBuckets(this.range, start, end);
+                const bucketIndex = new Map(buckets.map((bucket, index) => [bucket.key, index]));
+                const realEvents = AnalyticsStorage.getAll().filter(event => !event.isTest && PDF_EVENTS.includes(event.type));
+
+                realEvents.forEach(event => {
+                    const eventDate = new Date(event.timestamp);
+                    if (eventDate < start || eventDate > end) return;
+                    let key = '';
+                    if (this.range === 'today') {
+                        key = `${eventDate.getFullYear()}-${eventDate.getMonth()}-${eventDate.getDate()}-${eventDate.getHours()}`;
+                    } else if (this.range === '7days') {
+                        key = `${eventDate.getFullYear()}-${eventDate.getMonth()}-${eventDate.getDate()}`;
+                    } else if (this.range === 'month') {
+                        key = `${eventDate.getFullYear()}-${eventDate.getMonth()}-${eventDate.getDate()}`;
+                    } else {
+                        key = `${eventDate.getFullYear()}-${eventDate.getMonth()}`;
+                    }
+                    const idx = bucketIndex.get(key);
+                    if (typeof idx === 'number') buckets[idx].value += PDF_PRICE;
+                });
+
+                const labels = buckets.map(bucket => bucket.label);
+                const values = buckets.map(bucket => bucket.value);
+                const maxValue = Math.max(...values, 1);
+
+                window.paymentGrowthChart = new Chart(canvas, {
+                    type: 'line',
+                    data: {
+                        labels,
+                        datasets: [{
+                            label: 'Revenue',
+                            data: values,
+                            borderColor: '#22c55e',
+                            backgroundColor: 'rgba(34,197,94,0.18)',
+                            fill: true,
+                            tension: 0.38,
+                            borderWidth: 2.5,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#86efac',
+                            pointHoverRadius: 6,
+                            pointBorderColor: '#d1fae5'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: { mode: 'index', intersect: false },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    title: (items) => items[0]?.label || '',
+                                    label: (context) => `₹${Number(context.parsed.y).toLocaleString('en-IN')}`
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: { display: false },
+                                ticks: { color: '#a7b4c6', font: { size: 10 } },
+                                border: { display: false }
+                            },
+                            y: {
+                                beginAtZero: false,
+                                suggestedMax: maxValue * 1.2,
+                                grid: { color: 'rgba(148,163,184,0.12)' },
+                                ticks: {
+                                    color: '#a7b4c6',
+                                    callback: (value) => `₹${Number(value).toLocaleString('en-IN')}`
+                                },
+                                border: { display: false }
+                            }
+                        }
+                    }
+                });
+            }
+        };
+        document.addEventListener('DOMContentLoaded', () => { Dashboard.init(); PaymentGrowth.bind(); PaymentGrowth.render(); });
+        /*
+         * Integration notes:
+         * 1. Quotation creation: quotation.html async generatePdf(), after buildPdfDocument() resolves and showSuccessOverlay() runs.
+         * 2. Invoice creation: invoice.html async generatePdf(), after buildPdfDocument() resolves and showSuccessOverlay() runs.
+         * 3. Quotation PDF download: quotation.html downloadPreparedPdf(), after preparedPdfDocument.pdf.save(fileNameToUse).
+         * 4. Invoice PDF download: invoice.html downloadPreparedPdf(), after preparedPdfDocument.pdf.save(fileNameToUse).
+         * 5. Site visits: index.html DOMContentLoaded tracker, once per browser session.
+         * 6. Duplicate listener tracking is avoided by direct workflow calls. A deliberate second final download click counts as another real download.
+         * 7. Normal events are retained for 30 days.
+         * 8. Successful PDF download revenue events are retained for 1 year.
+         * 9. Storage keys: falsequote_analytics_events, falsequote_analytics_settings, falsequote_analytics_version.
+         * 10. Clear Analytics Data clears analytics records only, not quotation/invoice documents.
+         * 11. Add Test Data creates records with isTest: true and displays a test-data badge.
+         * 12. Backend migration can replace AnalyticsStorage methods with API calls.
+         * 13. PDF_PRICE = 20 is configured at the top of this script.
+         */
+    </script>
+    <script>
+        function getPaymentApiUrl() {
+            if (window.FALSEQUOTE_API_URL) return window.FALSEQUOTE_API_URL;
+            if (window.location.protocol === 'file:') return 'http://localhost:3000';
+            const hostname = window.location.hostname;
+            if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '0.0.0.0') {
+                return `${window.location.protocol}//${hostname}:3000`;
+            }
+            return window.location.origin;
+        }
+
+        const PAYMENT_API_URL = getPaymentApiUrl();
+        const AdminAuth = {
+            headers() { return {}; }
+        };
+
+        async function parseApiResponse(response) {
+            const contentType = response.headers.get('content-type') || '';
+            if (!contentType.includes('application/json')) {
+                throw new Error(`Server returned non-JSON response (${response.status}). Ensure the API server is running on ${PAYMENT_API_URL}.`);
+            }
+            try {
+                return await response.json();
+            } catch (error) {
+                throw new Error(`Failed to parse JSON response from server (${response.status}).`);
+            }
+        }
+
+        const PaymentNotifications = {
+            async load() {
+                const list = document.getElementById('payment-notifications-list');
+                const popoverList = document.getElementById('notification-popover-list');
+                try {
+                    const headers = AdminAuth.headers();
+                    const [paymentResponse, feedbackResponse] = await Promise.all([
+                        fetch(`${PAYMENT_API_URL}/api/payment-requests/paid`, { headers }),
+                        fetch(`${PAYMENT_API_URL}/api/feedback`, { headers })
+                    ]);
+                    const result = await parseApiResponse(paymentResponse);
+                    const feedbackResult = await parseApiResponse(feedbackResponse);
+                    if (!paymentResponse.ok) throw new Error(result.error || 'Unable to load payment notifications.');
+                    if (!feedbackResponse.ok) throw new Error(feedbackResult.error || 'Unable to load contractor feedback.');
+                    const renderPayment = payment => `
+                            <div class="status-row" style="border-top:1px solid var(--border);padding:12px 0;gap:12px">
+                            <div><strong>${this.escape(payment.quotationNumber)}</strong><div class="muted">${this.escape(payment.clientName || 'Anonymous client')} · ₹${payment.amount} · ${this.escape(payment.documentType || 'document')} · ${this.escape(payment.razorpayPaymentId)}</div></div>
+                            <span class="status-pill">Razorpay Verified</span>
+                        </div>`;
+                    const renderFeedback = item => `
+                        <div class="status-row" style="border-top:1px solid var(--border);padding:12px 0;gap:12px">
+                            <div><strong>${item.category === 'feature' ? 'Feature request' : 'Issue report'}: ${this.escape(item.title)}</strong><div class="muted">${this.escape(item.name || 'Anonymous contractor')}${item.email ? ` · ${this.escape(item.email)}` : ''}</div><div>${this.escape(item.details)}</div></div>
+                            <span class="status-pill">New</span>
+                        </div>`;
+                    const payments = result.paymentRequests || [];
+                    const feedback = feedbackResult.submissions || [];
+                    list.innerHTML = payments.length ? payments.map(renderPayment).join('') : '<p class="muted">No verified Razorpay payments yet.</p>';
+                    if (popoverList) {
+                        const combined = [...feedback.slice(0, 8).map(renderFeedback), ...payments.slice(0, 8).map(renderPayment)];
+                        popoverList.innerHTML = combined.length ? combined.join('') : '<span class="muted">No notifications yet.</span>';
+                    }
+                    this.setBadge(payments.length + feedback.length);
+                } catch (error) {
+                    list.innerHTML = `<p class="muted">${this.escape(error.message)}</p>`;
+                    if (popoverList) popoverList.innerHTML = `<span class="muted">${this.escape(error.message)}</span>`;
+                }
+            },
+            setBadge(count) {
+                const badge = document.getElementById('notification-badge');
+                if (!badge) return;
+                badge.textContent = count > 99 ? '99+' : String(count);
+                badge.hidden = count === 0;
+            },
+            escape(value) {
+                return String(value).replace(/[&<>'"]/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[character]));
+            },
+            bind() {
+                document.getElementById('payment-refresh-btn').addEventListener('click', () => this.load());
+                const trigger = document.getElementById('notification-trigger');
+                const popover = document.getElementById('notification-popover');
+                const close = document.getElementById('notification-close');
+                const setOpen = open => { popover.hidden = !open; trigger.setAttribute('aria-expanded', String(open)); if (open) this.load(); };
+                trigger.addEventListener('click', () => setOpen(popover.hidden));
+                close.addEventListener('click', () => setOpen(false));
+                this.load();
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            PaymentNotifications.bind();
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,10 @@
+server/.env
+server/falsequote.sqlite
+server/falsequote.sqlite-shm
+server/falsequote.sqlite-wal
+node_modules/
+server/node_modules/
+user-growth-system/node_modules/
+user-growth-system/dist/
+.env
+*.log

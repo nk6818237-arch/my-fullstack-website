@@ -1,0 +1,3842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Create New Invoice - FalseQuote</title>
+
+    <!-- Font Preconnects -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- PDF Generation Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+    <style>
+        /*=============== VARIABLES & BASE ===============*/
+        :root {
+            --body-bg: #0D0D1A;
+            --primary-color: #FFFFFF;
+            --secondary-color: #A8A8B3;
+            --accent-blue: #3A8BFF;
+            --accent-purple: #A13AFF;
+            --accent-gold: #FFC700;
+            --accent-red: #FF4D4D;
+            --accent-green: #28a745;
+            --card-bg: #161628;
+            --border-color: rgba(255, 255, 255, 0.08);
+            --input-bg: #111122;
+            --input-border: rgba(255, 255, 255, 0.12);
+            --input-focus-border: var(--accent-blue);
+            --placeholder-color: #6A6A8B;
+            --transition-speed: 0.2s ease;
+            --body-font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        * { box-sizing: border-box; padding: 0; margin: 0; }
+        html { scroll-behavior: smooth; font-size: 15px; }
+        body {
+            font-family: var(--body-font);
+            background-color: var(--body-bg);
+            color: var(--primary-color);
+            font-size: 0.95rem;
+            line-height: 1.5;
+            overflow-x: hidden;
+            padding-bottom: 72px; /* Compact space for sticky footer */
+        }
+        h1, h2, h3, h4 { font-weight: 600; }
+        a { text-decoration: none; color: inherit; }
+        ul { list-style: none; }
+        img { max-width: 100%; height: auto; }
+        button { font-family: inherit; cursor: pointer; border: none; background: none; }
+        textarea { font-family: inherit; resize: vertical; }
+
+        /*=============== HEADER ===============*/
+        .qb-header {
+            background-color: rgba(13, 13, 26, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 0.65rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        @media (min-width: 768px) {
+            .qb-header { padding: 0.85rem 2rem; }
+        }
+        .qb-header__logo { 
+            font-size: 1.25rem; 
+            font-weight: 700; 
+            background: linear-gradient(135deg, #FFF, #3A8BFF);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .qb-header__actions { display: flex; gap: 0.4rem; }
+
+        /*=============== MAIN CONTAINER ===============*/
+        .qb-main-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+            padding: 0.75rem;
+            max-width: 1700px;
+            margin: 0 auto;
+        }
+        @media (min-width: 768px) {
+            .qb-main-container {
+                padding: 1.25rem;
+                gap: 1.25rem;
+            }
+        }
+        @media (min-width: 1200px) {
+            .qb-main-container {
+                grid-template-columns: minmax(0, 1fr) 460px;
+                padding: 1.5rem 2rem;
+                gap: 1.5rem;
+            }
+        }
+
+        /*=============== STEPPER ===============*/
+        .qb-stepper {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.6rem 0.85rem;
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            margin-bottom: 0.65rem;
+            border: 1px solid var(--border-color);
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        .qb-stepper::-webkit-scrollbar { display: none; }
+        .qb-step-item {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            color: var(--secondary-color);
+            font-weight: 500;
+            font-size: 0.8rem;
+            transition: var(--transition-speed);
+            opacity: 0.45;
+            flex-shrink: 0;
+        }
+        .qb-step-item.is-active {
+            color: var(--primary-color);
+            opacity: 1;
+            font-weight: 600;
+        }
+        .qb-step-item.is-complete {
+            color: var(--accent-blue);
+            opacity: 1;
+        }
+        .qb-step-item__number {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            border: 1.5px solid currentColor;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.72rem;
+            font-weight: 700;
+            transition: all var(--transition-speed);
+        }
+        .qb-step-item.is-active .qb-step-item__number {
+            background-color: var(--accent-blue);
+            color: #FFFFFF;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 10px rgba(58, 139, 255, 0.4);
+        }
+        .qb-step-item.is-complete .qb-step-item__number {
+            background-color: rgba(58, 139, 255, 0.2);
+            color: var(--accent-blue);
+            border-color: var(--accent-blue);
+        }
+        .qb-step-item.is-complete .qb-step-item__number::before {
+            content: '✓';
+            font-size: 0.8rem;
+        }
+        .qb-step-item__name { display: none; }
+        @media (min-width: 600px) {
+            .qb-step-item__name { display: block; }
+        }
+        .qb-step-indicator {
+            text-align: center;
+            color: var(--accent-blue);
+            margin-bottom: 1rem;
+            font-size: 0.82rem;
+            font-weight: 500;
+        }
+
+        /*=============== FORM & CARDS ===============*/
+        .qb-step-content { display: none; }
+        .qb-step-content.is-active { display: block; }
+
+        .qb-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        @media (min-width: 768px) {
+            .qb-card {
+                padding: 1.35rem;
+                margin-bottom: 1.25rem;
+                border-radius: 12px;
+            }
+        }
+        .qb-card__header {
+            margin-bottom: 0.85rem;
+            padding-bottom: 0.6rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .qb-card__title { font-size: 1.05rem; }
+        .qb-card__subtitle { color: var(--secondary-color); font-size: 0.8rem; margin-top: 2px; }
+
+        .qb-form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+        .qb-form-grid--full { grid-column: 1 / -1; }
+        @media (max-width: 480px) {
+            .qb-form-grid {
+                grid-template-columns: 1fr;
+                gap: 0.65rem;
+            }
+            .qb-grid-row-2col {
+                grid-template-columns: 1fr 1fr !important;
+            }
+        }
+        @media (min-width: 768px) {
+            .qb-form-grid { gap: 1rem; }
+        }
+
+        /* Inline 2-column row for mobile numbers/dimensions */
+        .qb-grid-row-2col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.65rem;
+            grid-column: 1 / -1;
+        }
+        .qb-work-status-group { grid-column: 2; }
+        .qb-mode-buttons {
+            display: flex;
+            width: 100%;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .qb-mode-buttons .qb-button {
+            width: 50%;
+            flex: 1 1 0;
+        }
+        .qb-grid-row-3col {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 0.5rem;
+            grid-column: 1 / -1;
+        }
+
+        /*=============== INPUT GROUPS (STATIC CLEAN LABELS) ===============*/
+        .qb-input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            position: relative;
+        }
+        .qb-input-group__label {
+            color: var(--secondary-color);
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin-bottom: 2px;
+            display: block;
+            pointer-events: auto;
+        }
+        .qb-input-group__input {
+            width: 100%;
+            padding: 9px 12px;
+            background-color: var(--input-bg);
+            border: 1px solid var(--input-border);
+            border-radius: 7px;
+            color: var(--primary-color);
+            font-size: 0.9rem;
+            transition: var(--transition-speed);
+            font-family: inherit;
+        }
+        .qb-input-group__input:focus {
+            outline: none;
+            border-color: var(--input-focus-border);
+            box-shadow: 0 0 0 2.5px rgba(58, 139, 255, 0.25);
+            background-color: #141426;
+        }
+        
+        .qb-input-error {
+            color: var(--accent-red);
+            font-size: 0.72rem;
+            margin-top: 0.15rem;
+            display: block;
+            min-height: 1em;
+        }
+        .qb-input-group__input.is-invalid {
+            border-color: var(--accent-red);
+        }
+
+        /*=============== QUICK PRESETS ===============*/
+        .qb-presets-section {
+            margin-bottom: 1rem;
+            padding: 0.75rem;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px dashed var(--border-color);
+            border-radius: 8px;
+            grid-column: 1 / -1;
+        }
+        .qb-presets-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        .qb-presets-title {
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--accent-gold);
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+        .qb-presets-badge {
+            background: rgba(255, 199, 0, 0.15);
+            color: var(--accent-gold);
+            padding: 1px 6px;
+            border-radius: 10px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .qb-presets-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            max-height: 180px;
+            overflow-y: auto;
+        }
+        .qb-preset-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--primary-color);
+            padding: 0.32rem 0.65rem;
+            border-radius: 16px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            user-select: none;
+        }
+        .qb-preset-chip:hover {
+            background: rgba(58, 139, 255, 0.2);
+            border-color: var(--accent-blue);
+            transform: translateY(-1px);
+            color: #FFFFFF;
+        }
+        .qb-preset-chip .price {
+            color: var(--accent-gold);
+            font-weight: 600;
+            font-size: 0.7rem;
+        }
+
+        /*=============== WORK ITEMS LIST ===============*/
+        .qb-work-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 7px;
+            margin-bottom: 0.6rem;
+            background: rgba(255, 255, 255, 0.02);
+        }
+        .qb-work-item__details { flex: 1; min-width: 0; }
+        .qb-work-item__details strong {
+            color: var(--primary-color);
+            font-size: 0.88rem;
+            display: block;
+            margin-bottom: 0.15rem;
+            word-break: break-word;
+        }
+        .qb-work-item__details p {
+            margin: 0;
+            color: var(--secondary-color);
+            font-size: 0.78rem;
+        }
+        .qb-work-item__btns {
+            display: flex;
+            gap: 0.3rem;
+            flex-shrink: 0;
+        }
+
+        /*=============== TAX & DISCOUNT CARD ===============*/
+        .qb-tax-discount-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px dashed var(--border-color);
+            border-radius: 8px;
+            padding: 0.85rem;
+            margin-top: 1rem;
+            grid-column: 1 / -1;
+        }
+        .qb-tax-discount-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 0.65rem;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        /* Auto-generated details in Step 2 */
+        .qb-auto-details {
+            margin-top: 1rem;
+            padding-top: 0.85rem;
+            border-top: 1px solid var(--border-color);
+        }
+        .qb-auto-details__title {
+            font-size: 0.85rem;
+            color: var(--secondary-color);
+            margin-bottom: 0.6rem;
+            font-weight: 600;
+        }
+        .qb-auto-details__item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+            margin-bottom: 0.5rem;
+        }
+        .qb-auto-details__item span { color: var(--secondary-color); }
+        .qb-auto-details__item strong { color: var(--primary-color); font-weight: 600; }
+        .qb-quotation-no-group {
+            display: flex;
+            align-items: center;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+        .qb-quotation-no-input {
+            background: transparent;
+            border: none;
+            border-bottom: 1px dashed var(--secondary-color);
+            color: var(--primary-color);
+            font-family: inherit;
+            font-size: 0.85rem;
+            font-weight: 600;
+            width: 55px;
+            text-align: left;
+            padding: 1px 3px;
+        }
+        .qb-quotation-no-input:focus { outline: none; border-bottom: 1px solid var(--accent-blue); }
+
+        /* Step 2 project and work type controls */
+        .qb-select-control,
+        .qb-multiselect-trigger {
+            width: 100%;
+            min-height: 42px;
+            padding: 9px 12px;
+            background-color: var(--input-bg);
+            border: 1px solid var(--input-border);
+            border-radius: 7px;
+            color: var(--primary-color);
+            font-size: 0.9rem;
+            text-align: left;
+        }
+        .qb-select-control:focus,
+        .qb-multiselect-trigger:focus { outline: 2px solid var(--accent-blue); outline-offset: 2px; }
+        .qb-multiselect { position: relative; }
+        .qb-multiselect-trigger { display: flex; align-items: center; justify-content: space-between; gap: 8px; cursor: pointer; }
+        .qb-multiselect-trigger::after { content: '▾'; color: var(--secondary-color); flex-shrink: 0; }
+        .qb-multiselect-trigger.is-placeholder { color: var(--placeholder-color); }
+        .qb-multiselect-menu {
+            display: none;
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            right: 0;
+            z-index: 20;
+            padding: 10px;
+            background: var(--card-bg);
+            border: 1px solid var(--input-border);
+            border-radius: 8px;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+        }
+        .qb-multiselect.is-open .qb-multiselect-menu { display: block; }
+        .qb-multiselect-custom { margin-bottom: 8px; }
+        .qb-multiselect-options { max-height: 220px; overflow-y: auto; display: grid; gap: 2px; }
+        .qb-multiselect-option { display: flex; align-items: center; gap: 8px; padding: 8px 6px; border-radius: 5px; color: var(--primary-color); cursor: pointer; font-size: 0.84rem; }
+        .qb-multiselect-option:hover { background: rgba(58, 139, 255, 0.12); }
+        .qb-multiselect-option input { accent-color: var(--accent-blue); width: 16px; height: 16px; flex-shrink: 0; }
+        @media (max-width: 600px) {
+            .qb-multiselect-menu { position: fixed; left: 0.75rem; right: 0.75rem; top: auto; bottom: 72px; max-height: 60vh; }
+            .qb-multiselect-options { max-height: 42vh; }
+        }
+
+        /* Logo Upload */
+        .qb-logo-uploader {
+            border: 2px dashed var(--input-border);
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all var(--transition-speed);
+            position: relative;
+            min-height: 90px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .qb-logo-uploader:hover {
+            border-color: var(--accent-blue);
+            background-color: var(--input-bg);
+        }
+        .qb-logo-uploader__prompt {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.3rem;
+            color: var(--secondary-color);
+            font-size: 0.82rem;
+            pointer-events: none;
+        }
+        .qb-logo-uploader__prompt svg { width: 24px; height: 24px; color: var(--accent-gold); }
+        .qb-logo-uploader__prompt small { font-size: 0.7rem; opacity: 0.7; }
+        .qb-logo-uploader__preview {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .qb-logo-uploader__preview img { max-width: 120px; max-height: 60px; object-fit: contain; }
+        #remove-logo-btn {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            width: 24px;
+            height: 24px;
+            padding: 0;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            z-index: 10;
+        }
+
+        /*=============== SIGNATURE PAD ===============*/
+        .qb-signature-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+        .qb-signature-canvas-box {
+            position: relative;
+            background: #FFFFFF;
+            border-radius: 7px;
+            border: 1.5px dashed rgba(255, 255, 255, 0.3);
+            overflow: hidden;
+        }
+        .qb-signature-canvas {
+            width: 100%;
+            height: 110px;
+            display: block;
+            cursor: crosshair;
+            touch-action: none;
+        }
+        .qb-signature-hint {
+            position: absolute;
+            bottom: 4px;
+            left: 8px;
+            font-size: 0.65rem;
+            color: #9CA3AF;
+            pointer-events: none;
+        }
+        .qb-signature-controls {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /*=============== ACTION HUB ===============*/
+        .qb-action-hub {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.6rem;
+            margin-top: 0.75rem;
+        }
+        .qb-action-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+            padding: 0.65rem 0.85rem;
+            border-radius: 7px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            border: 1px solid transparent;
+        }
+        .qb-action-btn--whatsapp {
+            background-color: #25D366;
+            color: #0B2E13;
+            font-weight: 700;
+        }
+        .qb-action-btn--whatsapp:hover { background-color: #20BA5A; transform: translateY(-1px); }
+        .qb-action-btn--print { background-color: var(--accent-purple); color: #FFFFFF; }
+        .qb-action-btn--print:hover { background-color: #8c2be6; transform: translateY(-1px); }
+        .qb-action-btn--copy { background-color: rgba(255, 255, 255, 0.08); border-color: var(--border-color); color: var(--primary-color); }
+        .qb-action-btn--copy:hover { background-color: rgba(255, 255, 255, 0.15); transform: translateY(-1px); }
+
+        /*=============== LIVE PREVIEW (DESKTOP) ===============*/
+        .qb-preview-wrapper {
+            position: sticky;
+            top: 65px;
+            height: calc(100vh - 85px);
+            display: none;
+        }
+        @media (min-width: 1200px) {
+            .qb-preview-wrapper { display: block; }
+        }
+        .qb-preview-container {
+            width: 100%;
+            height: 100%;
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 0.75rem;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            overflow-y: auto;
+        }
+        .qb-preview-document-wrapper {
+            width: 420px;
+            min-height: 594px;
+            transform-origin: top center;
+            transform: scale(0.96);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+            border-radius: 4px;
+            background: #fff;
+        }
+
+        /*=============== STICKY FOOTER ===============*/
+        .qb-sticky-footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: rgba(13, 13, 26, 0.9);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 0.6rem 0.85rem;
+            padding-bottom: max(0.6rem, env(safe-area-inset-bottom));
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            gap: 0.5rem;
+            z-index: 100;
+        }
+        .qb-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.65rem 1.15rem;
+            border-radius: 7px;
+            font-weight: 600;
+            transition: var(--transition-speed);
+            flex: 1;
+            font-size: 0.9rem;
+            min-height: 40px;
+        }
+        .qb-button--primary { background-color: var(--accent-blue); color: #FFF; }
+        .qb-button--primary:hover { background-color: #2d7de6; }
+        .qb-button--primary:disabled { opacity: 0.5; cursor: not-allowed; }
+        .qb-button--secondary { background-color: rgba(255, 255, 255, 0.08); color: var(--primary-color); border: 1px solid var(--border-color); }
+        .qb-button--secondary:hover { background-color: rgba(255, 255, 255, 0.15); }
+        #sft-mode-btn[aria-pressed="true"] { background-color: var(--accent-blue); color: #FFFFFF; border-color: var(--accent-blue); }
+        #sft-mode-btn[aria-pressed="true"]:hover { background-color: #2d7de6; }
+        #rft-mode-btn[aria-pressed="true"] { background-color: var(--accent-gold); color: #1A1A1A; border-color: var(--accent-gold); }
+        #rft-mode-btn[aria-pressed="true"]:hover { background-color: #d7a928; }
+        .qb-button--danger { background-color: var(--accent-red); color: #FFF; }
+        .qb-button--danger:hover { background-color: #e63939; }
+        .qb-button--icon { padding: 0.35rem; flex: 0; min-width: 32px; height: 32px; font-size: 0.8rem; }
+        #live-preview-btn-mobile { display: inline-flex; }
+        @media (min-width: 1200px) {
+            #live-preview-btn-mobile { display: none; }
+        }
+
+        /*=============== QUOTATION DOCUMENT STYLES ===============*/
+        .quotation-document {
+            background: #FFFFFF;
+            color: #0A2342;
+            font-family: 'Times New Roman', Times, serif;
+            width: 100%;
+            min-height: 100%;
+            padding: 10px;
+            font-size: 6.5px;
+            line-height: 1.35;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid rgba(0,0,0,0.06);
+            --quote-text-dark: #0A2342;
+            --quote-accent-gold: #D4AF37;
+            --quote-border-light: #E0E0E0;
+        }
+        .quote-header--as-invoice {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding-bottom: 6px;
+            border-bottom: 2px solid var(--quote-accent-gold, #D4AF37);
+        }
+        .invoice-header__logo-name { display: flex; align-items: center; gap: 6px; }
+        .invoice-header__logo { width: 28px; height: 28px; object-fit: contain; }
+        .invoice-header__company-name { font-size: 13px; font-weight: 700; color: var(--quote-text-dark, #0A2342); }
+        .invoice-header__contact { text-align: right; font-size: 6px; color: #4B5563; }
+        .invoice-header__contact p { margin: 0; }
+        .invoice-title-info { display: flex; justify-content: space-between; align-items: center; margin: 8px 0; }
+        .invoice-title { font-size: 18px; color: var(--quote-accent-gold, #D4AF37); letter-spacing: 0.5px; margin: 0; font-weight: 700; }
+        .invoice-info { border-left: 2px solid var(--quote-border-light, #E0E0E0); padding-left: 8px; }
+        .invoice-info__item { display: flex; justify-content: space-between; gap: 8px; font-size: 6.5px; }
+        .invoice-info__item span { color: #6B7280; }
+        .invoice-info__item strong { color: var(--quote-text-dark, #0A2342); }
+        .quote-customer-info { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 6px; flex-shrink: 0; }
+        .quote-customer-card { border: 1px solid var(--quote-border-light, #E0E0E0); border-radius: 5px; overflow: hidden; }
+        .quote-customer-card__header { background: var(--quote-text-dark, #0A2342); color: #FFFFFF; padding: 2px 4px; font-weight: bold; font-size: 7px; }
+        .quote-customer-card__body { padding: 4px; display: grid; grid-template-columns: auto 4px 1fr; gap: 2px 3px; align-items: start; }
+        .quote-customer-card__body span { font-weight: 600; font-size: 5.8px; }
+        .quote-customer-card__body p { margin: 0; font-size: 5.8px; }
+        .quote-table-wrapper { border: 1px solid var(--quote-border-light, #E0E0E0); margin: 6px 0; flex-shrink: 0; border-radius: 4px; overflow: hidden; }
+        .quote-work-table { width: 100%; border-collapse: collapse; font-size: 5.5px; line-height: 1.3; }
+        .quote-work-table thead th { background: var(--quote-text-dark, #0A2342); color: #FFFFFF; padding: 3px 2px; text-align: center; font-weight: bold; border-right: 1px solid rgba(255, 255, 255, 0.2); }
+        .quote-work-table tbody td { padding: 3px 2px; border: 1px solid var(--quote-border-light, #E0E0E0); vertical-align: middle; }
+        .quote-work-table .col-sl, .quote-work-table .col-qty, .quote-work-table .col-unit, .quote-work-table .col-rate, .quote-work-table .col-remark { text-align: center; }
+        .quote-work-table .measurement-unit--sft { color: #2563EB; font-weight: bold; }
+        .quote-work-table .measurement-unit--rft { color: #C2410C; font-weight: bold; }
+        .col-amount { text-align: right; font-weight: 600; }
+        .quote-post-table { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; flex-shrink: 0; gap: 6px; }
+        .quote-amount-words { display: flex; align-items: center; gap: 6px; width: 50%; }
+        .quote-amount-words__icon { width: 20px; height: 20px; border-radius: 50%; border: 1.2px solid var(--quote-text-dark); display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 8px; flex-shrink: 0; }
+        .quote-amount-words__text span { display: block; font-size: 5.5px; font-weight: bold; color: #6B7280; }
+        .quote-amount-words__text p { margin: 0; font-style: italic; font-weight: 600; font-size: 5.8px; text-transform: capitalize; }
+        .quote-totals { width: 48%; border: 1px solid var(--quote-border-light, #E0E0E0); border-radius: 5px; overflow: hidden; }
+        .quote-totals-row { display: flex; justify-content: space-between; padding: 2.5px 5px; border-bottom: 1px solid var(--quote-border-light, #E0E0E0); font-size: 6px; }
+        .quote-totals-row:last-child { border-bottom: none; }
+        .quote-totals-row span { font-weight: 600; }
+        .quote-totals-row.grand-total { padding: 0; font-size: 8px; font-weight: bold; color: #FFFFFF; }
+        .grand-total__label { background: var(--quote-text-dark, #0A2342); padding: 3px 5px; flex: 1; }
+        .grand-total__amount { background: var(--quote-accent-gold, #D4AF37); padding: 3px 5px; min-width: 65px; text-align: right; }
+        .quote-footer { background: var(--quote-text-dark, #0A2342); color: var(--quote-accent-gold, #D4AF37); text-align: center; padding: 4px; margin: 6px -10px -10px -10px; border-bottom-left-radius: 4px; border-bottom-right-radius: 4px; position: relative; flex-shrink: 0; margin-top: auto; }
+        .quote-bottom-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 5px;
+            margin-top: 6px;
+            padding-top: 5px;
+            border-top: 1px solid var(--quote-border-light, #E0E0E0);
+            flex-shrink: 0;
+        }
+        .quote-bottom-section--single { grid-template-columns: 1fr; }
+        .quote-bottom-card {
+            border: 1px solid var(--quote-border-light, #E0E0E0);
+            border-radius: 5px;
+            padding: 3px 4px;
+        }
+        .quote-bottom-card__header {
+            font-weight: bold;
+            font-size: 6.8px;
+            margin-bottom: 2px;
+            color: var(--quote-text-dark, #0A2342);
+        }
+        .quote-footer-accent { position: absolute; top: 0; left: 10%; right: 10%; height: 1.5px; background: var(--quote-accent-gold, #D4AF37); border: none; }
+        .quote-footer__thankyou { font-weight: bold; font-size: 6.8px; margin-bottom: 2px; }
+        .quote-footer__contact { font-size: 5.5px; color: #FFFFFF; display: flex; justify-content: center; gap: 6px; }
+        .quote-footer__contact span { padding: 0 3px; }
+
+        /* Template Color Schemes */
+        .quotation-document.quotation-document--purple { --quote-text-dark: #4C1D95; --quote-accent-gold: #A78BFA; }
+        .quotation-document.quotation-document--forest-green { --quote-text-dark: #14532D; --quote-accent-gold: #4ADE80; }
+        .quotation-document.quotation-document--warm-orange { --quote-text-dark: #7C2D12; --quote-accent-gold: #FB923C; }
+        .quotation-document.quotation-document--indigo-violet { --quote-text-dark: #312E81; --quote-accent-gold: #818CF8; }
+        .quote-signature-box {
+            display: flex;
+            justify-content: space-around;
+            text-align: center;
+            margin-top: 6px;
+            padding: 4px;
+            flex-shrink: 0;
+            border: 1px solid var(--quote-border-light, #E0E0E0);
+            border-radius: 5px;
+        }
+        .quote-signature-col { font-size: 6px; font-weight: 600; color: var(--quote-text-dark, #0A2342); }
+        .quote-signature-line {
+            display: block;
+            border-top: 1px solid var(--quote-text-dark, #0A2342);
+            margin-top: 14px;
+            margin-bottom: 2px;
+            width: 70px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .quote-payment-signature-section {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 6px;
+            margin-top: 6px;
+            flex: 1 1 auto;
+            min-height: 0;
+            align-items: stretch;
+        }
+        .quote-payment-signature-section--with-qr { grid-template-columns: 1fr 1fr; }
+        .quote-payment-signature-section .quote-qr-card,
+        .quote-payment-signature-section .quote-signature-box {
+            height: 100%;
+        }
+        .quote-payment-signature-section .quote-signature-box { align-items: center; }
+
+        /* QR Code in Preview */
+        .quote-qr-card {
+            border: 1px solid var(--quote-border-light, #E0E0E0);
+            border-radius: 5px;
+            padding: 3px 5px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            background: #FAFAFA;
+        }
+        .quote-qr-img { width: 32px; height: 32px; object-fit: contain; border-radius: 3px; border: 1px solid #ddd; background: #fff; }
+        .quote-qr-info { font-size: 5px; line-height: 1.3; color: #374151; }
+        .quote-qr-info strong { display: block; font-size: 6px; color: var(--quote-text-dark, #0A2342); }
+
+        /* The PDF is rendered from a larger, dedicated document canvas so text remains readable on A4. */
+        .quotation-document.pdf-export-document {
+            width: 794px !important;
+            min-height: 1123px !important;
+            padding: 38px !important;
+            font-size: 13px !important;
+            line-height: 1.4 !important;
+        }
+        .pdf-export-document .quote-header--as-invoice { padding-bottom: 12px; border-bottom-width: 3px; }
+        .pdf-export-document .invoice-header__logo-name { gap: 12px; }
+        .pdf-export-document .invoice-header__logo { width: 56px; height: 56px; }
+        .pdf-export-document .invoice-header__company-name { font-size: 26px; }
+        .pdf-export-document .invoice-header__contact { font-size: 12px; }
+        .pdf-export-document .invoice-title-info { margin: 16px 0; }
+        .pdf-export-document .invoice-title { font-size: 36px; }
+        .pdf-export-document .invoice-info { border-left-width: 3px; padding-left: 16px; }
+        .pdf-export-document .invoice-info__item { gap: 16px; font-size: 13px; }
+        .pdf-export-document .quote-customer-info { gap: 12px; margin-bottom: 12px; }
+        .pdf-export-document .quote-customer-card { border-radius: 8px; }
+        .pdf-export-document .quote-customer-card__header { padding: 5px 8px; font-size: 14px; }
+        .pdf-export-document .quote-customer-card__body { padding: 8px; gap: 4px 6px; }
+        .pdf-export-document .quote-customer-card__body span,
+        .pdf-export-document .quote-customer-card__body p { font-size: 12px; }
+        .pdf-export-document .quote-table-wrapper { margin: 12px 0; }
+        .pdf-export-document .quote-work-table { font-size: 11px; line-height: 1.35; }
+        .pdf-export-document .quote-work-table thead th,
+        .pdf-export-document .quote-work-table tbody td { padding: 6px 5px; }
+        .pdf-export-document .quote-post-table { margin-bottom: 12px; gap: 12px; }
+        .pdf-export-document .quote-amount-words { gap: 12px; }
+        .pdf-export-document .quote-amount-words__icon { width: 40px; height: 40px; font-size: 16px; }
+        .pdf-export-document .quote-amount-words__text span { font-size: 11px; }
+        .pdf-export-document .quote-amount-words__text p { font-size: 12px; }
+        .pdf-export-document .quote-totals-row { padding: 5px 10px; font-size: 12px; }
+        .pdf-export-document .quote-totals-row.grand-total { font-size: 16px; }
+        .pdf-export-document .grand-total__label,
+        .pdf-export-document .grand-total__amount { padding: 6px 10px; }
+        .pdf-export-document .quote-bottom-section { gap: 10px; padding-top: 10px; }
+        .pdf-export-document .quote-bottom-card { padding: 6px 8px; }
+        .pdf-export-document .quote-bottom-card__header { font-size: 14px; margin-bottom: 4px; }
+        .pdf-export-document .quote-bottom-card ul,
+        .pdf-export-document .quote-bottom-card ol { padding-left: 16px; font-size: 11px; }
+        .pdf-export-document .quote-bottom-card li { margin-bottom: 2px; }
+        .pdf-export-document .quote-signature-box { margin-top: 12px; padding: 8px; }
+        .pdf-export-document .quote-payment-signature-section { gap: 12px; margin-top: 12px; }
+        .pdf-export-document .quote-signature-col { font-size: 12px; }
+        .pdf-export-document .quote-signature-line { margin-top: 28px; width: 140px; }
+        .pdf-export-document .quote-footer { padding: 8px; margin: 12px -38px -38px -38px; }
+        .pdf-export-document .quote-footer__thankyou { font-size: 14px; margin-bottom: 4px; }
+        .pdf-export-document .quote-footer__contact { font-size: 11px; gap: 12px; }
+        .pdf-export-document .quote-qr-card { padding: 6px 10px; gap: 10px; }
+        .pdf-export-document .quote-qr-img { width: 64px; height: 64px; }
+        .pdf-export-document .quote-qr-info { font-size: 10px; }
+        .pdf-export-document .quote-qr-info strong { font-size: 12px; }
+
+        /*=============== INVOICE DOCUMENT OVERRIDES ===============*/
+        .invoice-document {
+            --quote-text-dark: #1F2937;
+            --quote-accent-gold: #0F766E;
+            --quote-border-light: #E5E7EB;
+            --invoice-accent-bg-soft: #F0FDFA;
+            font-family: Arial, sans-serif;
+        }
+        .invoice-document.quotation-document--purple {
+            --quote-text-dark: #4C1D95;
+            --quote-accent-gold: #8E2DE2;
+            --quote-border-light: #E9D5FF;
+            --invoice-accent-bg-soft: #FAF5FF;
+        }
+        .invoice-document.quotation-document--forest-green {
+            --quote-text-dark: #004D40;
+            --quote-accent-gold: #4CAF50;
+            --quote-border-light: #C8E6C9;
+            --invoice-accent-bg-soft: #F1F8E9;
+        }
+        .invoice-document.quotation-document--warm-orange {
+            --quote-text-dark: #8B4513;
+            --quote-accent-gold: #FF8C00;
+            --quote-border-light: #FFF8DC;
+            --invoice-accent-bg-soft: #FFF7ED;
+        }
+        .invoice-document.quotation-document--indigo-violet {
+            --quote-text-dark: #483D8B;
+            --quote-accent-gold: #9370DB;
+            --quote-border-light: #E6E6FA;
+            --invoice-accent-bg-soft: #F5F3FF;
+        }
+        .invoice-document .quote-header--as-invoice { border-bottom-color: var(--quote-accent-gold); }
+        .invoice-document .invoice-title { color: var(--quote-accent-gold); }
+        .invoice-document .quote-customer-card__header,
+        .invoice-document .grand-total__label { background: var(--quote-accent-gold); }
+        .invoice-document .grand-total__amount { background: var(--invoice-accent-bg-soft); color: var(--quote-text-dark); }
+        .invoice-document .quote-bottom-card,
+        .invoice-document .quote-signature-box,
+        .invoice-document .quote-totals,
+        .invoice-document .quote-table-wrapper { border-color: var(--quote-border-light); }
+        .invoice-document .quote-footer { background: #F0FDFA; color: #4B5563; border-top: 1px solid var(--quote-border-light); }
+        .invoice-document .quote-footer__contact { color: #4B5563; }
+        .invoice-document .invoice-note-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 6px;
+            padding-top: 10px;
+            border-top: 1px solid var(--quote-border-light);
+        }
+        .invoice-document .invoice-payment-details { display: flex; flex-direction: column; gap: 4px; }
+        .invoice-document .invoice-payment-item { display: flex; justify-content: space-between; padding: 2px 4px; border-radius: 3px; font-size: 6px; }
+        .invoice-document .invoice-payment-item.pending { background: var(--quote-accent-gold); color: #FFFFFF; }
+        .invoice-note-payment-row { display: flex; align-items: center; gap: 10px; }
+        .invoice-note-payment-row .invoice-payment-details { flex: 1 1 auto; min-width: 0; }
+        .invoice-note-payment-row .invoice-upi-payment {
+            flex: 0 0 48%;
+            margin-top: 0;
+            padding: 6px;
+            border: 1px solid var(--quote-border-light);
+            border-radius: 6px;
+        }
+        .invoice-document .invoice-signature-box { display: grid; grid-template-columns: repeat(3, 1fr); }
+        .invoice-upi-payment {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 6px;
+            padding-top: 6px;
+            border-top: 1px solid var(--quote-border-light);
+        }
+        .invoice-upi-payment__qr { width: 44px; height: 44px; object-fit: contain; border: 1px solid var(--quote-border-light); background: #FFFFFF; }
+        .invoice-upi-payment__details { display: flex; flex-direction: column; gap: 1px; font-size: 6px; color: #4B5563; }
+        .invoice-upi-payment__details strong { color: var(--quote-accent-gold); font-size: 7px; }
+        .invoice-document .invoice-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--quote-accent-gold);
+        }
+        .invoice-document .invoice-client-project-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 10px;
+            font-size: 7px;
+        }
+        .invoice-document .invoice-bill-to,
+        .invoice-document .invoice-project {
+            background: var(--invoice-accent-bg-soft);
+            padding: 8px;
+            border-radius: 6px;
+        }
+        .invoice-document .invoice-client-project-info h3 {
+            font-size: 8px;
+            color: var(--quote-accent-gold);
+            margin: 0 0 6px;
+            border-bottom: 1px solid var(--quote-border-light);
+            padding-bottom: 4px;
+        }
+        .invoice-document .invoice-client-project-info p { margin: 2px 0; }
+        .invoice-document .invoice-summary {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .invoice-document .invoice-amount-words { flex: 1 1 54%; font-size: 7px; }
+        .invoice-document .invoice-amount-words span { font-weight: 600; color: #4B5563; }
+        .invoice-document .invoice-amount-words p { margin: 2px 0 0; font-style: italic; }
+        .invoice-document .invoice-totals { flex: 0 0 42%; font-size: 7px; }
+        .invoice-document .invoice-totals__row { display: flex; justify-content: space-between; padding: 3px 5px; border-bottom: 1px solid var(--quote-border-light); }
+        .invoice-document .invoice-totals__row.grand-total { background: var(--quote-accent-gold); color: #FFFFFF; font-size: 9px; padding: 5px; }
+        .invoice-document .invoice-table-wrapper { border: 1px solid var(--quote-border-light); margin-bottom: 5px; overflow: visible; }
+        .invoice-document .invoice-table { width: 100%; border-collapse: collapse; font-size: 4.8px; line-height: 1.18; table-layout: fixed; }
+        .invoice-document .invoice-table thead { background: var(--quote-accent-gold); color: #FFFFFF; }
+        .invoice-document .invoice-table th { padding: 3px 1px; text-align: center; font-weight: 600; }
+        .invoice-document .invoice-table td { border-bottom: 1px solid var(--quote-border-light); border-right: 1px solid var(--quote-border-light); padding: 2px 1px; vertical-align: top; }
+        .invoice-document .invoice-table tbody tr:nth-child(even) { background: #F0FDFA; }
+        .invoice-document .invoice-table td:first-child,
+        .invoice-document .invoice-table td:nth-child(4),
+        .invoice-document .invoice-table td:nth-child(5),
+        .invoice-document .invoice-table td:nth-child(7),
+        .invoice-document .invoice-table td:nth-child(8) { text-align: center; }
+        .invoice-document .invoice-table td:nth-child(6),
+        .invoice-document .invoice-table td:nth-child(9) { text-align: right; }
+        .invoice-document .invoice-note-section { margin-top: auto; }
+        .invoice-document .invoice-note {
+            grid-column: 1 / -1;
+            border: 1px solid var(--quote-border-light);
+            border-radius: 6px;
+            padding: 8px;
+        }
+        .invoice-document .invoice-note-section h3 { font-size: 8px; color: var(--quote-text-dark); margin: 0 0 6px; display: flex; align-items: center; }
+        .invoice-document .invoice-signature-area {
+            display: flex;
+            justify-content: space-around;
+            text-align: center;
+            padding-top: 15px;
+            margin-top: 10px;
+            font-size: 7px;
+        }
+        .invoice-document .invoice-signature-line { display: block; border-top: 1px solid #9CA3AF; margin-top: 20px; width: 80px; }
+        .invoice-document .invoice-footer {
+            background: var(--invoice-accent-bg-soft);
+            color: #4B5563;
+            text-align: center;
+            padding: 6px;
+            margin: 10px -10px -10px;
+            border-top: 1px solid var(--quote-border-light);
+            font-size: 6.5px;
+        }
+        .invoice-document .invoice-footer p { margin: 1px 0; }
+        .pdf-export-document.invoice-document .invoice-header { padding-bottom: 12px; }
+        .pdf-export-document.invoice-document .invoice-header__logo-name { gap: 12px; }
+        .pdf-export-document.invoice-document .invoice-header__logo { width: 56px; height: 56px; }
+        .pdf-export-document.invoice-document .invoice-header__company-name { font-size: 26px; }
+        .pdf-export-document.invoice-document .invoice-header__contact { font-size: 12px; }
+        .pdf-export-document.invoice-document .invoice-title-info { margin: 16px 0; }
+        .pdf-export-document.invoice-document .invoice-title { font-size: 36px; }
+        .pdf-export-document.invoice-document .invoice-info { padding-left: 16px; }
+        .pdf-export-document.invoice-document .invoice-info__item { gap: 16px; font-size: 13px; }
+        .pdf-export-document.invoice-document .invoice-client-project-info { gap: 12px; margin-bottom: 12px; }
+        .pdf-export-document.invoice-document .invoice-bill-to,
+        .pdf-export-document.invoice-document .invoice-project { padding: 12px; }
+        .pdf-export-document.invoice-document .invoice-client-project-info h3 { font-size: 14px; }
+        .pdf-export-document.invoice-document .invoice-client-project-info p { font-size: 12px; }
+        .pdf-export-document.invoice-document .invoice-table { font-size: 11px; line-height: 1.35; }
+        .pdf-export-document.invoice-document .invoice-table th,
+        .pdf-export-document.invoice-document .invoice-table td { padding: 6px 5px; }
+        .pdf-export-document.invoice-document .invoice-summary { gap: 12px; margin-bottom: 12px; }
+        .pdf-export-document.invoice-document .invoice-amount-words { font-size: 12px; }
+        .pdf-export-document.invoice-document .invoice-totals { font-size: 12px; }
+        .pdf-export-document.invoice-document .invoice-totals__row { padding: 5px 10px; }
+        .pdf-export-document.invoice-document .invoice-totals__row.grand-total { font-size: 16px; padding: 6px 10px; }
+        .pdf-export-document.invoice-document .invoice-note-section { gap: 12px; padding-top: 10px; }
+        .pdf-export-document.invoice-document .invoice-note,
+        .pdf-export-document.invoice-document .invoice-note-section h3 { font-size: 14px; }
+        .pdf-export-document.invoice-document .invoice-payment-item { font-size: 11px; padding: 5px 8px; }
+        .pdf-export-document.invoice-document .invoice-note-payment-row { gap: 20px; }
+        .pdf-export-document.invoice-document .invoice-note-payment-row .invoice-upi-payment { margin-top: 0; padding-top: 0; }
+        .pdf-export-document.invoice-document .invoice-upi-payment__qr { width: 84px; height: 84px; }
+        .pdf-export-document.invoice-document .invoice-upi-payment__details { font-size: 10px; }
+        .pdf-export-document.invoice-document .invoice-upi-payment__details strong { font-size: 12px; }
+        .pdf-export-document.invoice-document .invoice-signature-area { font-size: 12px; padding-top: 15px; margin-top: 12px; }
+        .pdf-export-document.invoice-document .invoice-signature-line { margin-top: 28px; width: 140px; }
+        .pdf-export-document.invoice-document .invoice-footer { padding: 8px; margin: 12px -38px -38px; font-size: 11px; }
+
+        /*=============== MODAL (MOBILE PREVIEW) ===============*/
+        .qb-modal {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0,0,0,0.85);
+            backdrop-filter: blur(8px);
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.5rem;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease;
+        }
+        .qb-modal.is-open { opacity: 1; pointer-events: auto; }
+        .qb-modal__content {
+            background-color: var(--body-bg);
+            border-radius: 12px;
+            padding: 0.75rem;
+            width: 100%;
+            max-width: 440px;
+            max-height: 94vh;
+            overflow-y: auto;
+            position: relative;
+            border: 1px solid var(--border-color);
+        }
+        .qb-modal__close {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.75rem;
+            font-size: 1.5rem;
+            color: var(--secondary-color);
+            background: none;
+            border: none;
+            cursor: pointer;
+            z-index: 210;
+        }
+
+        .pdf-processing-overlay,
+        .pdf-success-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 400;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(8, 10, 22, 0.72);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .pdf-processing-overlay.is-visible,
+        .pdf-success-overlay.is-visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .pdf-processing-modal,
+        .pdf-success-modal {
+            background: rgba(16, 18, 31, 0.92);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 26px;
+            width: min(92vw, 480px);
+            padding: 2rem 1.5rem 1.4rem;
+            box-shadow: 0 30px 70px rgba(0, 0, 0, 0.45);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .pdf-processing-overlay.is-visible .pdf-processing-modal {
+            animation: modalRise 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+        .pdf-success-overlay.is-visible .pdf-success-modal {
+            animation: modalRise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+        .pdf-processing-modal::before,
+        .pdf-success-modal::before {
+            content: "";
+            position: absolute;
+            inset: -30% -30% auto;
+            height: 120px;
+            background: radial-gradient(circle, rgba(58, 139, 255, 0.24), transparent 65%);
+            pointer-events: none;
+        }
+        .pdf-processing-machine {
+            position: relative;
+            width: 190px;
+            height: 190px;
+            margin: 0 auto 1.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .pdf-sheet {
+            width: 92px;
+            height: 120px;
+            background: linear-gradient(180deg, #f0f7ff 0%, #dfeeff 100%);
+            border-radius: 14px;
+            border: 1px solid rgba(8, 48, 92, 0.14);
+            position: relative;
+            box-shadow: 0 18px 35px rgba(23, 113, 255, 0.28);
+            animation: floatDoc 2.6s ease-in-out infinite;
+        }
+        .pdf-sheet::before {
+            content: "";
+            position: absolute;
+            inset: 12px 12px auto 12px;
+            height: 20px;
+            border-radius: 8px;
+            background: rgba(58, 139, 255, 0.12);
+        }
+        .pdf-sheet::after {
+            content: "";
+            position: absolute;
+            left: 12px;
+            right: 12px;
+            top: 42px;
+            bottom: 16px;
+            border-radius: 8px;
+            background: linear-gradient(180deg, rgba(58, 139, 255, 0.12), rgba(58, 139, 255, 0.02));
+            box-shadow: inset 0 0 0 1px rgba(58, 139, 255, 0.08);
+        }
+        .pdf-sheet__fold {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 18px;
+            height: 18px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(161, 190, 255, 0.6));
+            clip-path: polygon(0 0, 100% 0, 100% 100%);
+            border-top-right-radius: 12px;
+            border-bottom-left-radius: 8px;
+        }
+        .processing-ring {
+            position: absolute;
+            border-radius: 50%;
+            border: 2px solid rgba(90, 160, 255, 0.55);
+            box-shadow: 0 0 24px rgba(58, 139, 255, 0.25);
+            animation: spin 7s linear infinite;
+        }
+        .ring-1 { width: 150px; height: 150px; }
+        .ring-2 { width: 176px; height: 176px; border-style: dashed; animation-direction: reverse; animation-duration: 10s; }
+        .ring-3 { width: 120px; height: 120px; border-color: rgba(255, 199, 0, 0.6); animation-duration: 5s; }
+        .pdf-scanner {
+            position: absolute;
+            width: 110px;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, rgba(103, 210, 255, 0.9), transparent);
+            box-shadow: 0 0 12px rgba(103, 210, 255, 0.9);
+            animation: scanline 2s ease-in-out infinite;
+        }
+        .pdf-particles {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+        }
+        .pdf-particle {
+            position: absolute;
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: rgba(117, 203, 255, 0.9);
+            box-shadow: 0 0 10px rgba(117, 203, 255, 0.75);
+            animation: orbit 4.5s linear infinite;
+        }
+        .pdf-particle:nth-child(1) { left: 30%; top: 16%; animation-delay: 0s; }
+        .pdf-particle:nth-child(2) { left: 62%; top: 18%; animation-delay: 0.6s; }
+        .pdf-particle:nth-child(3) { left: 70%; top: 52%; animation-delay: 1.2s; }
+        .pdf-particle:nth-child(4) { left: 30%; top: 70%; animation-delay: 1.8s; }
+        .pdf-particle:nth-child(5) { left: 18%; top: 44%; animation-delay: 2.4s; }
+        .pdf-particle:nth-child(6) { left: 58%; top: 72%; animation-delay: 3s; }
+        .gear {
+            position: absolute;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 199, 0, 0.9);
+            background: radial-gradient(circle, rgba(255, 199, 0, 0.32), rgba(255, 199, 0, 0.06));
+            box-shadow: inset 0 0 0 4px rgba(255, 199, 0, 0.18);
+        }
+        .gear::before,
+        .gear::after {
+            content: "";
+            position: absolute;
+            inset: 8px;
+            border-radius: 50%;
+            border: 1px solid rgba(255, 199, 0, 0.65);
+        }
+        .gear::after {
+            inset: 3px;
+            border-style: dashed;
+            transform: rotate(16deg);
+        }
+        .gear-1 { right: 12px; bottom: 20px; animation: spin 5s linear infinite reverse; }
+        .gear-2 { left: 10px; top: 24px; width: 20px; height: 20px; animation: spin 4s linear infinite; }
+        .pdf-processing-copy {
+            position: relative;
+            z-index: 1;
+        }
+        .pdf-status-text {
+            color: #edf6ff;
+            font-size: 0.96rem;
+            letter-spacing: 0.02em;
+            margin-bottom: 0.8rem;
+            min-height: 1.5em;
+            font-weight: 600;
+        }
+        .pdf-progress-percentage {
+            font-size: 2.2rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            color: #63c3ff;
+            margin-bottom: 0.7rem;
+            line-height: 1;
+        }
+        .pdf-progress-track {
+            width: 100%;
+            height: 12px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.08);
+            overflow: hidden;
+            position: relative;
+        }
+        .pdf-progress-bar {
+            height: 100%;
+            width: 0%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, #3a8bff 0%, #7ed2ff 35%, #79f0d3 100%);
+            box-shadow: 0 0 20px rgba(97, 195, 255, 0.75);
+            transition: width 0.25s ease;
+        }
+        .pdf-success-content {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 0.8rem;
+        }
+        .pdf-success-emoji {
+            font-size: 3rem;
+            line-height: 1;
+            filter: drop-shadow(0 8px 18px rgba(58, 139, 255, 0.25));
+        }
+        .pdf-success-overlay.is-visible .pdf-success-emoji {
+            animation: successPop 0.65s 0.12s cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+        .pdf-success-confetti {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+        .pdf-confetti-piece {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 10px;
+            height: 18px;
+            border-radius: 3px;
+            opacity: 0;
+            animation: confettiBurst 1.2s ease-out forwards;
+        }
+        .pdf-success-title {
+            font-size: clamp(1.7rem, 3vw, 2.2rem);
+            color: #ffffff;
+            font-weight: 800;
+            letter-spacing: -0.04em;
+        }
+        .pdf-success-subtitle {
+            color: rgba(255,255,255,0.75);
+            font-size: 1rem;
+            max-width: 320px;
+        }
+        .pdf-payment-help {
+            margin: 0;
+            color: rgba(255,255,255,0.72);
+            font-size: 0.8rem;
+            text-align: center;
+        }
+        .pdf-payment-help a { color: #b8d7ff; }
+        .pdf-success-action {
+            width: min(100%, 300px);
+            border: none;
+            background: linear-gradient(135deg, #3a8bff 0%, #6d6ef7 100%);
+            color: white;
+            border-radius: 14px;
+            padding: 1rem 1.2rem;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 12px 26px rgba(58, 139, 255, 0.35);
+            transition: transform 0.2s ease, opacity 0.2s ease;
+        }
+        .pdf-success-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 30px rgba(58, 139, 255, 0.45);
+        }
+        .pdf-success-action:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+        .pdf-success-secondary {
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.12);
+            color: rgba(255,255,255,0.85);
+            padding: 0.8rem 1rem;
+            border-radius: 12px;
+            min-width: 180px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        @keyframes scanline {
+            0% { transform: translateY(-55px) scaleX(0.7); opacity: 0; }
+            10% { opacity: 1; }
+            50% { transform: translateY(60px) scaleX(1); opacity: 1; }
+            100% { transform: translateY(120px) scaleX(0.7); opacity: 0; }
+        }
+        @keyframes orbit {
+            0% { transform: translate(0, 0) scale(0.7); opacity: 0.2; }
+            25% { transform: translate(18px, -16px) scale(1); opacity: 1; }
+            50% { transform: translate(0, 24px) scale(0.8); opacity: 0.8; }
+            100% { transform: translate(-18px, 0) scale(0.7); opacity: 0.2; }
+        }
+        @keyframes floatDoc {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+        }
+        @keyframes modalRise {
+            from { opacity: 0; transform: translateY(18px) scale(0.97); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes successPop {
+            0% { opacity: 0; transform: scale(0.55) rotate(-12deg); }
+            70% { opacity: 1; transform: scale(1.12) rotate(4deg); }
+            100% { opacity: 1; transform: scale(1) rotate(0); }
+        }
+        @keyframes confettiBurst {
+            0% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.5) rotate(0deg);
+            }
+            12% { opacity: 1; }
+            100% {
+                opacity: 0;
+                transform: translate(
+                    calc(var(--x) * 1px),
+                    calc(var(--y) * 1px)
+                ) scale(1) rotate(var(--r));
+            }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .pdf-sheet,
+            .processing-ring,
+            .pdf-scanner,
+            .pdf-particle,
+            .gear,
+            .pdf-progress-bar {
+                animation-duration: 0.001ms !important;
+                animation-iteration-count: 1 !important;
+                transition: none !important;
+            }
+            .pdf-processing-overlay.is-visible .pdf-processing-modal,
+            .pdf-success-overlay.is-visible .pdf-success-modal,
+            .pdf-success-overlay.is-visible .pdf-success-emoji {
+                animation: none !important;
+            }
+        }
+
+        /* Notification Toast */
+        .qb-notification {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--accent-green);
+            color: white;
+            padding: 0.55rem 1.15rem;
+            border-radius: 7px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.35);
+            z-index: 1000;
+            font-size: 0.85rem;
+            font-weight: 500;
+            opacity: 0;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+            pointer-events: none;
+            max-width: 90vw;
+            text-align: center;
+        }
+        .qb-notification.is-visible {
+            opacity: 1;
+            transform: translate(-50%, -6px);
+        }
+
+        /*=============== PRINT MEDIA STYLES ===============*/
+        @media print {
+            body { background: #FFF !important; color: #000 !important; padding: 0 !important; margin: 0 !important; }
+            .qb-header, .qb-stepper, .qb-step-indicator, .qb-form-container, .qb-sticky-footer, .qb-modal, .qb-notification { display: none !important; }
+            .qb-main-container { display: block !important; padding: 0 !important; margin: 0 !important; max-width: 100% !important; }
+            .qb-preview-wrapper { display: block !important; position: static !important; height: auto !important; }
+            .qb-preview-container { background: none !important; border: none !important; padding: 0 !important; box-shadow: none !important; }
+            .qb-preview-document-wrapper { width: 100% !important; height: auto !important; transform: none !important; box-shadow: none !important; border-radius: 0 !important; }
+            .quotation-document { padding: 8mm !important; border: none !important; font-size: 8pt !important; width: 100% !important; }
+            .invoice-header__company-name { font-size: 15pt !important; }
+            .invoice-title { font-size: 18pt !important; }
+            .quote-work-table { font-size: 7.5pt !important; }
+            .quote-work-table th, .quote-work-table td { padding: 4px 5px !important; }
+            .quote-totals-row { font-size: 8pt !important; }
+            .quote-totals-row.grand-total { font-size: 10pt !important; }
+            .quote-customer-card__header { font-size: 8pt !important; }
+            .quote-customer-card__body span, .quote-customer-card__body p { font-size: 7.5pt !important; }
+            .quote-bottom-card__header { font-size: 8pt !important; }
+            .quote-bottom-card p, .quote-bottom-card ol { font-size: 7.5pt !important; }
+            .quote-footer { font-size: 7.5pt !important; }
+            .quote-footer__thankyou { font-size: 9pt !important; }
+            .quote-footer__contact { font-size: 7.5pt !important; }
+            .quote-qr-img { width: 45px !important; height: 45px !important; }
+            .quote-signature-col { font-size: 8pt !important; }
+            .quotation-document * { color-adjust: exact !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        }
+    </style>
+</head>
+<body>
+    <svg width="0" height="0" style="position:absolute;pointer-events:none;">
+        <defs>
+            <symbol id="icon-upload" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></symbol>
+        </defs>
+    </svg>
+
+    <header class="qb-header">
+        <a href="#" class="qb-header__logo">FalseQuote</a>
+        <div class="qb-header__actions">
+            <button type="button" id="save-draft-btn" class="qb-button qb-button--secondary" style="flex: 0; display: none;">Save Draft</button>
+            <button type="button" id="clear-draft-btn" class="qb-button qb-button--danger" style="flex: 0; display: none;">New Invoice</button>
+        </div>
+    </header>
+
+    <main class="qb-main-container">
+        <div class="qb-form-container">
+            <!-- STEPPER -->
+            <div class="qb-stepper">
+                <div class="qb-step-item is-active" data-step-id="1">
+                    <div class="qb-step-item__number">01</div>
+                    <div class="qb-step-item__name">Company</div>
+                </div>
+                <div class="qb-step-item" data-step-id="2">
+                    <div class="qb-step-item__number">02</div>
+                    <div class="qb-step-item__name">Project</div>
+                </div>
+                <div class="qb-step-item" data-step-id="3">
+                    <div class="qb-step-item__number">03</div>
+                    <div class="qb-step-item__name">Client</div>
+                </div>
+                <div class="qb-step-item" data-step-id="4">
+                    <div class="qb-step-item__number">04</div>
+                    <div class="qb-step-item__name">Work</div>
+                </div>
+                <div class="qb-step-item" data-step-id="5">
+                    <div class="qb-step-item__number">05</div>
+                    <div class="qb-step-item__name">Finalize</div>
+                </div>
+            </div>
+            <div class="qb-step-indicator" id="step-indicator-text">Step 1 of 5: Company Details</div>
+
+            <form id="quotation-form" novalidate>
+                <!-- STEP 1: COMPANY DETAILS -->
+                <div class="qb-step-content is-active" data-step-content="1">
+                    <div class="qb-card">
+                        <div class="qb-card__header">
+                            <h2 class="qb-card__title">Company Details</h2>
+                            <p class="qb-card__subtitle">This information will appear on your invoice.</p>
+                        </div>
+                        <div class="qb-form-grid">
+                            <div class="qb-form-grid--full">
+                                <div class="qb-logo-uploader" id="logo-uploader">
+                                    <input type="file" id="company-logo-upload" accept="image/*" hidden>
+                                    <div class="qb-logo-uploader__preview" id="logo-preview-container" style="display: none;">
+                                        <img id="logo-preview" src="" alt="Logo Preview">
+                                        <button type="button" id="remove-logo-btn" class="qb-button qb-button--danger">&times;</button>
+                                    </div>
+                                    <div class="qb-logo-uploader__prompt" id="logo-prompt">
+                                        <svg style="position: static; transform: none;"><use xlink:href="#icon-upload"></use></svg>
+                                        <span>Click to upload logo</span>
+                                        <small>PNG, JPG, SVG up to 2MB</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="qb-input-group qb-form-grid--full">
+                                <label for="companyName" class="qb-input-group__label">Company Name *</label>
+                                <input type="text" id="companyName" class="qb-input-group__input" data-path="company.name" required>
+                                <span class="qb-input-error"></span>
+                            </div>
+                            
+                            <div class="qb-input-group qb-form-grid--full">
+                                <label for="companyAddress" class="qb-input-group__label">Business Address</label>
+                                <input type="text" id="companyAddress" class="qb-input-group__input" data-path="company.address">
+                                <span class="qb-input-error"></span>
+                            </div>
+
+                            <div class="qb-grid-row-2col">
+                                <div class="qb-input-group">
+                                    <label for="companyMobile" class="qb-input-group__label">Mobile Number</label>
+                                    <input type="tel" id="companyMobile" class="qb-input-group__input" data-path="company.mobile">
+                                    <span class="qb-input-error"></span>
+                                </div>
+                                <div class="qb-input-group">
+                                    <label for="companyEmail" class="qb-input-group__label">Email Address</label>
+                                    <input type="email" id="companyEmail" class="qb-input-group__input" data-path="company.email">
+                                    <span class="qb-input-error"></span>
+                                </div>
+                            </div>
+                            <div class="qb-grid-row-2col">
+                                <div class="qb-input-group">
+                                    <label for="companyWebsite" class="qb-input-group__label">Website</label>
+                                    <input type="text" id="companyWebsite" class="qb-input-group__input" data-path="company.website">
+                                    <span class="qb-input-error"></span>
+                                </div>
+                                <div class="qb-input-group">
+                                    <label for="companyGstin" class="qb-input-group__label">GSTIN</label>
+                                    <input type="text" id="companyGstin" class="qb-input-group__input" data-path="company.gstin">
+                                    <span class="qb-input-error"></span>
+                                </div>
+                            </div>
+                            <div id="user-upi-fields" class="qb-grid-row-2col">
+                                <div class="qb-input-group">
+                                    <label for="companyUpiId" class="qb-input-group__label">User UPI ID</label>
+                                    <input type="text" id="companyUpiId" class="qb-input-group__input" data-path="company.upiId">
+                                    <span class="qb-input-error"></span>
+                                </div>
+                                <div class="qb-input-group">
+                                    <label for="companyUpiName" class="qb-input-group__label">User Pay Name</label>
+                                    <input type="text" id="companyUpiName" class="qb-input-group__input" data-path="company.upiName">
+                                    <span class="qb-input-error"></span>
+                                </div>
+                            </div>
+                            <div class="qb-input-group qb-form-grid--full">
+                                <label for="paymentMethod" class="qb-input-group__label">Payment Method</label>
+                                <select id="paymentMethod" class="qb-select-control" data-path="paymentMethod"><option value="upi">UPI (Small Amount)</option><option value="bank">Bank Transfer (Large Amount)</option></select>
+                            </div>
+                            <div id="bank-transfer-fields" class="qb-form-grid--full" style="display: none;"><div class="qb-grid-row-2col">
+                                <div class="qb-input-group"><label for="bankAccountHolder" class="qb-input-group__label">Account Holder Name</label><input type="text" id="bankAccountHolder" class="qb-input-group__input" data-path="bankDetails.accountHolder"></div>
+                                <div class="qb-input-group"><label for="bankName" class="qb-input-group__label">Bank Name</label><input type="text" id="bankName" class="qb-input-group__input" data-path="bankDetails.bankName"></div>
+                                <div class="qb-input-group"><label for="bankAccountNumber" class="qb-input-group__label">Account Number</label><input type="text" id="bankAccountNumber" class="qb-input-group__input" data-path="bankDetails.accountNumber"></div>
+                                <div class="qb-input-group"><label for="bankIfsc" class="qb-input-group__label">IFSC Code</label><input type="text" id="bankIfsc" class="qb-input-group__input" data-path="bankDetails.ifsc"></div>
+                                <div class="qb-input-group"><label for="bankBranch" class="qb-input-group__label">Branch Name</label><input type="text" id="bankBranch" class="qb-input-group__input" data-path="bankDetails.branch"></div>
+                                <div class="qb-input-group"><label for="bankAccountType" class="qb-input-group__label">Account Type</label><select id="bankAccountType" class="qb-select-control" data-path="bankDetails.accountType"><option value="">Select Account Type</option><option value="Savings">Savings</option><option value="Current">Current</option></select></div>
+                            </div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 2: PROJECT DETAILS -->
+                <div class="qb-step-content" data-step-content="2">
+                    <div class="qb-card">
+                        <div class="qb-card__header">
+                            <h2 class="qb-card__title">Project Details & Work</h2>
+                            <p class="qb-card__subtitle">Provide the main details about the project.</p>
+                        </div>
+                        <div class="qb-form-grid">
+                            <div class="qb-input-group qb-form-grid--full">
+                                <label for="projectName" class="qb-input-group__label">Project Name *</label>
+                                <input type="text" id="projectName" class="qb-input-group__input" data-path="project.name" required>
+                                <span class="qb-input-error"></span>
+                            </div>
+                            <div class="qb-grid-row-2col">
+                                <div class="qb-input-group">
+                                    <label for="projectType" class="qb-input-group__label">Project Type *</label>
+                                    <select id="projectType" class="qb-select-control" data-path="project.projectType" required>
+                                        <option value="" selected>Select Project Type</option>
+                                        <option value="Residential">Residential</option>
+                                        <option value="Commercial">Commercial</option>
+                                    </select>
+                                    <span class="qb-input-error"></span>
+                                </div>
+                                <div class="qb-input-group">
+                                    <label for="workType" class="qb-input-group__label">Work Type *</label>
+                                    <div class="qb-multiselect" id="work-type-picker">
+                                        <button type="button" id="work-type-trigger" class="qb-multiselect-trigger is-placeholder" aria-expanded="false" aria-controls="work-type-menu">Select Work Type</button>
+                                        <div class="qb-multiselect-menu" id="work-type-menu">
+                                            <input type="text" id="work-type-custom" class="qb-input-group__input qb-multiselect-custom" placeholder="Type your own work type..." autocomplete="off">
+                                            <div class="qb-multiselect-options" id="work-type-options">
+                                                <label class="qb-multiselect-option"><input type="checkbox" value="Gypsum False Ceiling">Gypsum False Ceiling</label>
+                                                <label class="qb-multiselect-option"><input type="checkbox" value="POP False Ceiling">POP False Ceiling</label>
+                                                <label class="qb-multiselect-option"><input type="checkbox" value="Grid Ceiling">Grid Ceiling</label>
+                                                <label class="qb-multiselect-option"><input type="checkbox" value="PVC Ceiling">PVC Ceiling</label>
+                                                <label class="qb-multiselect-option"><input type="checkbox" value="Gypsum Partition">Gypsum Partition</label>
+                                                <label class="qb-multiselect-option"><input type="checkbox" value="Gypsum Wall Cladding">Gypsum Wall Cladding</label>
+                                                <label class="qb-multiselect-option"><input type="checkbox" value="Cove / Light Box Work">Cove / Light Box Work</label>
+                                                <label class="qb-multiselect-option"><input type="checkbox" value="Ceiling Repair / Modification">Ceiling Repair / Modification</label>
+                                                <label class="qb-multiselect-option"><input type="checkbox" value="Labour Charges">Labour Charges</label>
+                                                <label class="qb-multiselect-option"><input type="checkbox" value="Multiple">Multiple</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <input type="hidden" id="workType" data-path="project.workType" required>
+                                    <span class="qb-input-error"></span>
+                                </div>
+                                <div class="qb-input-group qb-work-status-group">
+                                    <label for="workStatus" class="qb-input-group__label">Work Status</label>
+                                    <select id="workStatus" class="qb-select-control" data-path="project.workStatus">
+                                        <option value="Pending" selected>Pending</option>
+                                        <option value="Completed">Completed</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="qb-auto-details">
+                            <h3 class="qb-auto-details__title">Invoice Info</h3>
+                            <div class="qb-auto-details__item">
+                                <span>Invoice No.</span>
+                                <div class="qb-quotation-no-group">
+                                    <span id="quotationNoPrefix"></span>
+                                    <input type="text" id="quotationNoSuffix" class="qb-quotation-no-input">
+                                </div>
+                            </div>
+                            <div class="qb-auto-details__item">
+                                <span>Invoice Date</span>
+                                <strong id="displayQuotationDate">(auto)</strong>
+                            </div>
+                            <div class="qb-auto-details__item">
+                                <span>Due Date</span>
+                                <strong id="displayValidityDate">(auto)</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 3: CLIENT DETAILS -->
+                <div class="qb-step-content" data-step-content="3">
+                    <div class="qb-card">
+                        <div class="qb-card__header">
+                            <h2 class="qb-card__title">Client Details</h2>
+                            <p class="qb-card__subtitle">Enter the client's billing details exactly as they should appear on the invoice.</p>
+                        </div>
+                        <div class="qb-form-grid">
+                            <div class="qb-input-group qb-form-grid--full">
+                                <label for="clientName" class="qb-input-group__label">Client Name</label>
+                                <input type="text" id="clientName" class="qb-input-group__input" data-path="client.name">
+                                <span class="qb-input-error"></span>
+                            </div>
+                            
+                            <div class="qb-input-group qb-form-grid--full">
+                                <label for="clientMobile" class="qb-input-group__label">Mobile Number</label>
+                                <input type="tel" id="clientMobile" class="qb-input-group__input" data-path="client.mobile">
+                                <span class="qb-input-error"></span>
+                            </div>
+                            
+                            <div class="qb-input-group qb-form-grid--full">
+                                <label for="siteAddress" class="qb-input-group__label">Site Address *</label>
+                                <textarea id="siteAddress" class="qb-input-group__input" data-path="client.siteAddress" rows="3" required></textarea>
+                                <span class="qb-input-error"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 4: WORK & CALCULATION -->
+                <div class="qb-step-content" data-step-content="4">
+                    <div class="qb-mode-buttons">
+                        <button type="button" id="sft-mode-btn" class="qb-button qb-button--primary" aria-pressed="true">SFT</button>
+                        <button type="button" id="rft-mode-btn" class="qb-button qb-button--secondary" aria-pressed="false">RFT</button>
+                    </div>
+                    <div class="qb-card">
+                        <div class="qb-card__header">
+                            <h2 class="qb-card__title">Work & Calculation</h2>
+                        </div>
+
+                        <div class="qb-form-grid qb-form-grid--full" id="add-item-form">
+                            <input type="hidden" id="editing-item-index" value="-1">
+                            <div class="qb-input-group qb-form-grid--full">
+                                <label for="itemRoom" class="qb-input-group__label">Room / Area (e.g. Master Bedroom / Hall)</label>
+                                <input type="text" id="itemRoom" class="qb-input-group__input">
+                            </div>
+                            <div class="qb-input-group qb-form-grid--full">
+                                <label for="itemWorkDetails" class="qb-input-group__label">Work Details / Specification *</label>
+                                <textarea id="itemWorkDetails" class="qb-input-group__input" rows="2" required></textarea>
+                                <span class="qb-input-error"></span>
+                            </div>
+                            <div class="qb-grid-row-2col">
+                                <div class="qb-input-group" id="item-length-group">
+                                    <label for="itemLength" class="qb-input-group__label">Length (ft)</label>
+                                    <input type="number" id="itemLength" class="qb-input-group__input" step="any">
+                                </div>
+                                <div class="qb-input-group" id="item-width-group">
+                                    <label for="itemWidth" class="qb-input-group__label">Width (ft)</label>
+                                    <input type="number" id="itemWidth" class="qb-input-group__input" step="any">
+                                </div>
+                                <div class="qb-input-group" id="item-qty-group" style="display: none;">
+                                    <label for="itemQty" class="qb-input-group__label">Qty / Count</label>
+                                    <input type="number" id="itemQty" class="qb-input-group__input" value="1" step="any">
+                                </div>
+                            </div>
+                            <div class="qb-input-group qb-form-grid--full">
+                                <div class="qb-input-group">
+                                    <label for="itemRate" class="qb-input-group__label">Rate (₹) *</label>
+                                    <input type="number" id="itemRate" class="qb-input-group__input" required step="any">
+                                    <span class="qb-input-error"></span>
+                                </div>
+                            </div>
+                            <div class="qb-form-grid--full" style="display: flex; gap: 0.5rem;">
+                                <button type="button" id="add-item-btn" class="qb-button qb-button--primary" style="width: auto; flex: 1;">+ Add Item</button>
+                                <button type="button" id="cancel-edit-btn" class="qb-button qb-button--secondary" style="display: none; width: auto; flex: 0;">Cancel Edit</button>
+                            </div>
+                        </div>
+
+                        <!-- TAX & DISCOUNT SETTINGS -->
+                        <div class="qb-tax-discount-card">
+                            <div class="qb-tax-discount-title">
+                                <span id="tax-settings-title">🏷️ Discount & GST / Tax Settings</span>
+                            </div>
+                            <div class="qb-form-grid">
+                                <div class="qb-grid-row-2col">
+                                    <div class="qb-input-group">
+                                        <label for="discountType" class="qb-input-group__label">Discount Type</label>
+                                        <select id="discountType" class="qb-input-group__input has-content" data-path="discount.type">
+                                            <option value="none">No Discount</option>
+                                            <option value="percent">Percentage (%)</option>
+                                            <option value="flat">Flat Amount (₹)</option>
+                                        </select>
+                                    </div>
+                                    <div class="qb-input-group" id="discount-val-group">
+                                        <label for="discountValue" class="qb-input-group__label">Discount Value</label>
+                                        <input type="number" id="discountValue" class="qb-input-group__input has-content" data-path="discount.value" value="0" min="0" step="any">
+                                    </div>
+                                </div>
+                                <div class="qb-grid-row-2col" id="gst-settings-group">
+                                    <div class="qb-input-group qb-form-grid--full">
+                                        <label for="taxRate" class="qb-input-group__label">GST (%)</label>
+                                        <select id="taxRate" class="qb-input-group__input has-content" data-path="tax.rate">
+                                            <option value="0">0% (Nil / Exempt)</option>
+                                            <option value="5">5% GST</option>
+                                            <option value="12">12% GST</option>
+                                            <option value="18" selected>18% GST (Standard)</option>
+                                            <option value="28">28% GST</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="qb-card" id="work-items-list-container" style="display: none;">
+                        <div class="qb-card__header">
+                            <h3 class="qb-card__title">Added Items</h3>
+                        </div>
+                        <div id="work-items-list"></div>
+                    </div>
+                </div>
+
+                <!-- STEP 5: FINALIZE -->
+                <div class="qb-step-content" data-step-content="5">
+                    <div class="qb-card">
+                        <div class="qb-card__header">
+                            <h2 class="qb-card__title">Payment & Notes</h2>
+                            <p class="qb-card__subtitle">Record payment received and add invoice notes.</p>
+                        </div>
+                        <div class="qb-form-grid">
+                            <div class="qb-input-group qb-form-grid--full">
+                                <label for="paymentReceived" class="qb-input-group__label">Amount Received (₹)</label>
+                                <input type="number" id="paymentReceived" class="qb-input-group__input" data-path="payment.received" min="0" step="0.01" value="0">
+                            </div>
+                            <div class="qb-input-group qb-form-grid--full">
+                                <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;">
+                                    <label for="notes" class="qb-input-group__label">Notes & Specifications</label>
+                                    <button type="button" id="remove-notes-btn" class="qb-button qb-button--danger" style="width: auto; padding: 0.25rem 0.6rem; min-height: 28px; font-size: 0.75rem;">Remove</button>
+                                </div>
+                                <textarea id="notes" class="qb-input-group__input" data-path="notes" rows="3"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- DIGITAL SIGNATURE PAD -->
+                    <div class="qb-card">
+                        <div class="qb-card__header">
+                            <h2 class="qb-card__title">✍️ Authorized Digital Signature</h2>
+                            <p class="qb-card__subtitle">Sign directly on screen to personalize and authenticate this invoice.</p>
+                        </div>
+                        <div class="qb-signature-wrapper">
+                            <div class="qb-signature-canvas-box">
+                                <canvas id="signature-canvas" class="qb-signature-canvas" width="450" height="110"></canvas>
+                                <span class="qb-signature-hint">Draw signature with finger or mouse</span>
+                            </div>
+                            <div class="qb-signature-controls">
+                                <label style="display: inline-flex; align-items: center; gap: 0.4rem; color: var(--secondary-color); font-size: 0.8rem; cursor: pointer;">
+                                    <input type="checkbox" id="enable-signature-toggle" checked>
+                                    <span>Show signature on document</span>
+                                </label>
+                                <button type="button" id="clear-signature-btn" class="qb-button qb-button--secondary" style="flex: 0; padding: 0.3rem 0.85rem; font-size: 0.8rem; min-height: 32px;">Clear</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- STYLE & TEMPLATE -->
+                    <div class="qb-card">
+                        <div class="qb-card__header">
+                            <h2 class="qb-card__title">Style & Color Theme</h2>
+                            <p class="qb-card__subtitle">Customize the appearance of your document.</p>
+                        </div>
+                        <div class="qb-form-grid">
+                            <div class="qb-grid-row-2col">
+                                <div class="qb-input-group">
+                                    <label for="templateSelector" class="qb-input-group__label">Color Theme</label>
+                                    <select id="templateSelector" class="qb-input-group__input has-content" data-path="selectedTemplate">
+                                        <option value="default">Default (Teal Invoice)</option>
+                                        <option value="quotation-document--purple">Royal Purple</option>
+                                        <option value="quotation-document--forest-green">Forest Green</option>
+                                        <option value="quotation-document--warm-orange">Warm Terracotta</option>
+                                        <option value="quotation-document--indigo-violet">Indigo Violet</option>
+                                    </select>
+                                </div>
+                                <div class="qb-input-group">
+                                    <label for="colorSelector" class="qb-input-group__label">Invoice Accent Color</label>
+                                    <input type="color" id="colorSelector" class="qb-input-group__input has-content" data-path="selectedColor" style="padding: 4px; height: 38px; cursor: pointer;">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- EXPORT & ACTION HUB -->
+                    <div class="qb-card" id="export-card">
+                        <div class="qb-card__header">
+                            <h2 class="qb-card__title">🚀 Export & Share</h2>
+                            <p class="qb-card__subtitle">Download high-definition PDF, print vector copy, or send instantly via WhatsApp.</p>
+                        </div>
+                        <div class="qb-action-hub">
+                            <button type="button" id="hub-whatsapp-btn" class="qb-action-btn qb-action-btn--whatsapp">
+                                <span>💬 WhatsApp Share</span>
+                            </button>
+                            <button type="button" id="hub-print-btn" class="qb-action-btn qb-action-btn--print">
+                                <span>🖨️ High-Res Print</span>
+                            </button>
+                            <button type="button" id="hub-copy-btn" class="qb-action-btn qb-action-btn--copy">
+                                <span>📋 Copy Summary</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- LIVE PREVIEW (Desktop) -->
+        <div class="qb-preview-wrapper">
+            <div class="qb-preview-container">
+                <div class="qb-preview-document-wrapper">
+                    <div id="live-preview" class="invoice-document quotation-document">
+                        <!-- Invoice HTML structure will be injected here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- STICKY FOOTER -->
+    <footer class="qb-sticky-footer">
+        <button type="button" id="back-btn" class="qb-button qb-button--secondary" style="display: none;">Back</button>
+        <button type="button" id="live-preview-btn-mobile" class="qb-button qb-button--secondary">👁️ Preview</button>
+        <button type="button" id="next-btn" class="qb-button qb-button--primary">Continue</button>
+    </footer>
+
+    <!-- MODALS -->
+    <div id="live-preview-modal" class="qb-modal">
+        <div class="qb-modal__content">
+            <button class="qb-modal__close" data-close-modal="live-preview-modal">&times;</button>
+            <div class="qb-preview-document-wrapper" style="transform: none; width: 100%; height: 82vh; overflow-y: auto; box-shadow: none; border-radius: 6px;">
+                 <div id="live-preview-modal-content" class="invoice-document quotation-document" style="font-size: 7.5px; padding: 10px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="pdf-processing-overlay" class="pdf-processing-overlay" aria-live="polite" aria-modal="true" role="dialog">
+        <div class="pdf-processing-modal">
+            <div class="pdf-processing-machine" aria-hidden="true">
+                <div class="processing-ring ring-1"></div>
+                <div class="processing-ring ring-2"></div>
+                <div class="processing-ring ring-3"></div>
+                <div class="pdf-sheet">
+                    <div class="pdf-sheet__fold"></div>
+                </div>
+                <div class="pdf-scanner"></div>
+                <div class="pdf-particles">
+                    <span class="pdf-particle"></span>
+                    <span class="pdf-particle"></span>
+                    <span class="pdf-particle"></span>
+                    <span class="pdf-particle"></span>
+                    <span class="pdf-particle"></span>
+                    <span class="pdf-particle"></span>
+                </div>
+                <div class="gear gear-1"></div>
+                <div class="gear gear-2"></div>
+            </div>
+            <div class="pdf-processing-copy">
+                <div id="pdf-status-text" class="pdf-status-text">Preparing your invoice...</div>
+                <div id="pdf-progress-percent" class="pdf-progress-percentage">0%</div>
+                <div class="pdf-progress-track">
+                    <div id="pdf-progress-bar" class="pdf-progress-bar"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="pdf-success-overlay" class="pdf-success-overlay" aria-live="polite" aria-modal="true" role="dialog">
+        <div class="pdf-success-modal">
+            <div class="pdf-success-confetti" aria-hidden="true"></div>
+            <div class="pdf-success-content">
+                <div class="pdf-success-emoji">🎉</div>
+                <div class="pdf-success-title">Congratulations!</div>
+                <div id="pdf-payment-offer" class="pdf-success-subtitle">Pay ₹30 to unlock your invoice PDF.</div>
+                <div id="payment-status-message" class="pdf-success-subtitle" aria-live="polite" style="white-space: pre-line;"></div>
+                <p class="pdf-payment-help">Payment issue? <a href="mailto:supporthelpfalsequote@gmail.com?subject=Invoice%20Payment%20Support%20-%20FalseQuote">supporthelpfalsequote@gmail.com</a></p>
+                <button type="button" id="pay-pdf-btn" class="pdf-success-action">Pay ₹30 to Download PDF</button>
+                <button type="button" id="download-ready-pdf-btn" class="pdf-success-action" disabled aria-disabled="true">⬇ Download Your PDF</button>
+                <button type="button" id="back-to-quotation-btn" class="pdf-success-secondary">Back to Invoice</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- NOTIFICATION -->
+    <div id="qb-notification" class="qb-notification"></div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // =================================================================
+    // CONFIG & CONSTANTS
+    // =================================================================
+    const totalSteps = 5;
+
+    // Common work item preset catalog
+    const PRESETS = {
+        gypsum: { details: 'Gypsum Board False Ceiling with GI Channel Framing & POP finish', unit: 'Sft', rate: 95, room: 'Living / Hall' },
+        pop: { details: 'POP Punning & Designer False Ceiling with cornice mouldings', unit: 'Sft', rate: 125, room: 'Drawing Room' },
+        grid: { details: '2x2 Grid Tile Ceiling (Mineral Fiber Armstrong Tiles with T-Grid)', unit: 'Sft', rate: 85, room: 'Office / Commercial' },
+        cove: { details: 'Indirect LED Cove Light Profile Groove & pelmet construction', unit: 'Rft', rate: 110, room: 'Ceiling Perimeter' },
+        pvc: { details: 'PVC Wall & Ceiling Panelling (Waterproof & Termite-proof)', unit: 'Sft', rate: 75, room: 'Balcony / Bathroom' },
+        louvers: { details: 'Wooden Fluted Louvers / Charcoal Wall Panels with adhesive fixing', unit: 'Sft', rate: 180, room: 'TV Unit Wall' },
+        paint: { details: 'Interior Royal Emulsion Paint (2 Coats + Primer + Putty finish)', unit: 'Sft', rate: 28, room: 'All Rooms' },
+        lights: { details: 'LED COB Downlight Installation with concealed wiring connection', unit: 'Nos', rate: 350, room: 'Ceiling' },
+        wardrobe: { details: 'Modular Wardrobe (Commercial BWP Ply + 1mm Laminate + Soft close)', unit: 'Sft', rate: 1450, room: 'Bedroom' },
+        kitchen: { details: 'Modular Kitchen Base & Wall Cabinets (BWP Marine Ply + Acrylic)', unit: 'Sft', rate: 1850, room: 'Kitchen' },
+        wiring: { details: 'Electrical Point Wiring with Modular Switch Plate & Concealed Conduit', unit: 'Pt', rate: 650, room: 'General' }
+    };
+
+    // =================================================================
+    // STATE MANAGEMENT
+    // =================================================================
+    let quotationData = {};
+    let currentStep = 1;
+    let isDrawing = false;
+    let lastX = 0;
+    let lastY = 0;
+    let preparedPdfDocument = null;
+    let generatedPdfFileName = '';
+    let pdfAudioContext = null;
+    let pdfProcessingInterval = null;
+    let pdfProcessingStart = null;
+    let pdfProcessingProgress = 0;
+    let pdfSoundTimeout = null;
+    let measurementMode = 'sft';
+    let paymentApproved = false;
+    let activePaymentRequestId = null;
+
+    const ADMIN_PAYMENT_AMOUNT = 30;
+    const isLocalHost = window.location.protocol === 'file:' || ['localhost', '127.0.0.1'].includes(window.location.hostname);
+    const PAYMENT_API_BASE_URL = window.FALSEQUOTE_API_URL || (isLocalHost ? 'http://localhost:3000' : window.location.origin);
+    let requiredPaymentAmount = ADMIN_PAYMENT_AMOUNT;
+    let generatedPageCount = 1;
+
+    const initialData = {
+        company: {
+            logo: "",
+            name: "",
+            address: "",
+            mobile: "",
+            email: "",
+            website: "",
+            gstin: "",
+            upiId: "",
+            upiName: "",
+            paymentMethod: "upi",
+            bankDetails: { accountHolder: "", bankName: "", accountNumber: "", ifsc: "", branch: "", accountType: "" }
+        },
+        client: {
+            name: "",
+            mobile: "",
+            siteAddress: ""
+        },
+        project: { 
+            name: "", 
+            docType: "INVOICE",
+            projectType: "", 
+            workType: "",
+                workStatus: "Pending",
+            quotationNo: "",
+            quotationDate: "",
+            validityDate: "",
+        },
+        items: [],
+        discount: {
+            type: "none", // none, percent, flat
+            value: 0
+        },
+        tax: {
+            rate: 18 // 0, 5, 12, 18, 28
+        },
+        signature: {
+            dataUrl: "",
+            enabled: true
+        },
+        paymentQr: {
+            enabled: true,
+            advancePercent: 40
+        },
+        payment: {
+            received: 0
+        },
+        calculations: {
+            subtotal: 0,
+            discountAmount: 0,
+            taxableAmount: 0,
+            taxAmount: 0,
+            grandTotal: 0,
+            amountInWords: ''
+        },
+        notes: "",
+        selectedTemplate: "default",
+        selectedColor: "#0F766E"
+    };
+
+    // =================================================================
+    // DOM ELEMENTS
+    // =================================================================
+    const form = document.getElementById('quotation-form');
+    const backBtn = document.getElementById('back-btn');
+    const nextBtn = document.getElementById('next-btn');
+    const livePreviewContainer = document.getElementById('live-preview');
+    const mobilePreviewContainer = document.getElementById('live-preview-modal-content');
+    
+    // Step 1 specific
+    const logoUploader = document.getElementById('logo-uploader');
+    const logoUploadInput = document.getElementById('company-logo-upload');
+    const logoPreviewContainer = document.getElementById('logo-preview-container');
+    const logoPreview = document.getElementById('logo-preview');
+    const logoPrompt = document.getElementById('logo-prompt');
+    const removeLogoBtn = document.getElementById('remove-logo-btn');
+    
+    // Step 4 specific
+    const addItemBtn = document.getElementById('add-item-btn');
+    const cancelEditBtn = document.getElementById('cancel-edit-btn');
+    const workItemsListContainer = document.getElementById('work-items-list-container');
+    const workItemsList = document.getElementById('work-items-list');
+    const presetsGrid = document.getElementById('presets-grid');
+    const sftModeBtn = document.getElementById('sft-mode-btn');
+    const rftModeBtn = document.getElementById('rft-mode-btn');
+
+    // Signature Canvas
+    const signatureCanvas = document.getElementById('signature-canvas');
+    const sigCtx = signatureCanvas ? signatureCanvas.getContext('2d') : null;
+    const clearSignatureBtn = document.getElementById('clear-signature-btn');
+    const enableSigToggle = document.getElementById('enable-signature-toggle');
+    const removeNotesBtn = document.getElementById('remove-notes-btn');
+
+    // Step 2 project/work type controls
+    const workTypePicker = document.getElementById('work-type-picker');
+    const workTypeTrigger = document.getElementById('work-type-trigger');
+    const workTypeCustom = document.getElementById('work-type-custom');
+    const workTypeOptions = document.getElementById('work-type-options');
+    const workTypeInput = document.getElementById('workType');
+    let customWorkType = '';
+
+    // =================================================================
+    // INITIALIZATION
+    // =================================================================
+    function init() {
+        loadOrCreateDraft();
+        initSignatureCanvas();
+        updateUI();
+        bindEventListeners();
+    }
+
+    function updateUI() {
+        showStep(currentStep);
+        populateFormFromState();
+        updatePaymentMethodFields();
+        updateWorkTypePicker();
+        updateQuotationInfo(false);
+        renderWorkItems();
+        calculateTotals();
+        renderPreview();
+    }
+
+    function updatePaymentMethodFields() {
+        const isBank = quotationData.paymentMethod === 'bank';
+        const upiFields = document.getElementById('user-upi-fields');
+        const bankFields = document.getElementById('bank-transfer-fields');
+        if (upiFields) upiFields.style.display = isBank ? 'none' : 'grid';
+        if (bankFields) bankFields.style.display = isBank ? 'block' : 'none';
+    }
+
+    // =================================================================
+    // STEP NAVIGATION
+    // =================================================================
+    function showStep(stepNumber) {
+        currentStep = stepNumber;
+        document.querySelector('.qb-form-container').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+        document.querySelectorAll('.qb-step-content').forEach(el => el.classList.remove('is-active'));
+        const activeStepContent = document.querySelector(`.qb-step-content[data-step-content="${stepNumber}"]`);
+        if (activeStepContent) activeStepContent.classList.add('is-active');
+
+        document.querySelectorAll('.qb-step-item').forEach(el => {
+            const stepId = parseInt(el.dataset.stepId, 10);
+            el.classList.remove('is-active', 'is-complete');
+            if (stepId < stepNumber) el.classList.add('is-complete');
+            else if (stepId === stepNumber) el.classList.add('is-active');
+        });
+
+        const stepNames = ["Company Details", "Project Details", "Client Details", "Work & Calculations", "Finalize & Export"];
+        document.getElementById('step-indicator-text').textContent = `Step ${stepNumber} of ${totalSteps}: ${stepNames[stepNumber - 1]}`;
+
+        const exportCard = document.getElementById('export-card');
+        if (exportCard) {
+            exportCard.style.display = stepNumber === totalSteps ? 'none' : 'block';
+        }
+
+        backBtn.style.display = stepNumber > 1 ? 'inline-flex' : 'none';
+        nextBtn.textContent = stepNumber < totalSteps ? 'Continue' : 'Generate PDF';
+    }
+
+    function handleNext() {
+        if (currentStep === 4) {
+            const pendingWorkFields = ['itemRoom', 'itemWorkDetails', 'itemLength', 'itemWidth', 'itemRate', 'itemQty'];
+            const hasPendingWork = pendingWorkFields.some(id => document.getElementById(id)?.value.trim());
+            if (hasPendingWork) handleAddItem();
+        }
+
+        if (!validateStep(currentStep)) {
+            const firstInvalid = form.querySelector('.is-invalid');
+            if (firstInvalid) {
+                firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                firstInvalid.focus();
+            }
+            return;
+        }
+        if (currentStep < totalSteps) {
+            showStep(currentStep + 1);
+        } else {
+            generatePdf();
+        }
+    }
+
+    function handleBack() {
+        if (currentStep > 1) showStep(currentStep - 1);
+    }
+
+    // =================================================================
+    // DATA BINDING & STATE
+    // =================================================================
+    function populateFormFromState() {
+        form.querySelectorAll('[data-path]').forEach(input => {
+            const path = input.dataset.path.split('.');
+            let value = quotationData;
+            path.forEach(key => { value = value ? value[key] : undefined; });
+
+            if (value !== undefined && value !== null) {
+                input.value = value;
+            } else {
+                input.value = '';
+            }
+
+            if (input.value) {
+                input.classList.add('has-content');
+            } else {
+                input.classList.remove('has-content');
+            }
+        });
+
+        // Logo
+        if (quotationData.company && quotationData.company.logo) {
+            logoPreview.src = quotationData.company.logo;
+            logoPreviewContainer.style.display = 'flex';
+            logoPrompt.style.display = 'none';
+        } else {
+            removeLogo(false);
+        }
+
+        // Quotation info display in Step 2
+        const quotationNoPrefixEl = document.getElementById('quotationNoPrefix');
+        if (quotationNoPrefixEl) {
+            const fullNo = quotationData.project.quotationNo || '';
+            const parts = fullNo.split('-');
+            const suffix = parts.pop() || '';
+            const prefix = parts.length > 0 ? parts.join('-') + '-' : '';
+            
+            quotationNoPrefixEl.textContent = prefix;
+            document.getElementById('quotationNoSuffix').value = suffix;
+            
+            document.getElementById('displayQuotationDate').textContent = quotationData.project.quotationDate || '(auto)';
+            document.getElementById('displayValidityDate').textContent = quotationData.project.validityDate || '(auto)';
+        }
+
+        // Signature toggle state
+        if (enableSigToggle && quotationData.signature) {
+            enableSigToggle.checked = quotationData.signature.enabled !== false;
+        }
+
+        updateGstSettingsVisibility();
+    }
+
+    function updateGstSettingsVisibility() {
+        const gstSettingsGroup = document.getElementById('gst-settings-group');
+        const taxSettingsTitle = document.getElementById('tax-settings-title');
+        const hasGstin = Boolean((quotationData.company && quotationData.company.gstin || '').trim());
+
+        if (gstSettingsGroup) gstSettingsGroup.style.display = hasGstin ? 'grid' : 'none';
+        if (taxSettingsTitle) taxSettingsTitle.textContent = hasGstin
+            ? '🏷️ Discount & GST / Tax Settings'
+            : '🏷️ Discount Settings';
+    }
+
+    function updateWorkTypePicker() {
+        if (!workTypeInput || !workTypeTrigger || !workTypeOptions) return;
+        const values = (quotationData.project.workType || '').split(', ').filter(Boolean);
+        const availableOptions = Array.from(workTypeOptions.querySelectorAll('input[type="checkbox"]')).map(option => option.value);
+        const selected = values.filter(value => availableOptions.includes(value));
+        if (!customWorkType) customWorkType = values.filter(value => !availableOptions.includes(value)).join(', ');
+        const combined = [...selected, ...(customWorkType ? [customWorkType] : [])];
+        workTypeInput.value = combined.join(', ');
+        workTypeOptions.querySelectorAll('input[type="checkbox"]').forEach(option => {
+            option.checked = selected.includes(option.value);
+        });
+        if (workTypeCustom) workTypeCustom.value = customWorkType;
+        workTypeTrigger.textContent = combined.length ? combined.join(', ') : 'Select Work Type';
+        workTypeTrigger.classList.toggle('is-placeholder', combined.length === 0);
+    }
+
+    function handleWorkTypeChange() {
+        const selected = Array.from(workTypeOptions.querySelectorAll('input[type="checkbox"]:checked')).map(option => option.value);
+        quotationData.project.workType = [...selected, ...(customWorkType ? [customWorkType] : [])].join(', ');
+        updateWorkTypePicker();
+        clearError(workTypeInput);
+        renderPreview();
+        autoSave();
+    }
+
+    function handleFormInput(e) {
+        const input = e.target;
+        const path = input.dataset.path;
+        if (!path) return;
+
+        const pathParts = path.split('.');
+        let currentStatePart = quotationData;
+        for (let i = 0; i < pathParts.length - 1; i++) {
+            if (!currentStatePart[pathParts[i]]) {
+                currentStatePart[pathParts[i]] = {};
+            }
+            currentStatePart = currentStatePart[pathParts[i]];
+        }
+        
+        let value = input.value;
+        if (path === 'discount.value' || path === 'tax.rate' || path === 'paymentQr.advancePercent') {
+            value = parseFloat(value) || 0;
+        }
+
+        currentStatePart[pathParts[pathParts.length - 1]] = value;
+        if (path === 'paymentMethod') updatePaymentMethodFields();
+
+        if (path === 'company.name') {
+            updateQuotationInfo(false);
+            populateFormFromState();
+        }
+
+        if (input.value) input.classList.add('has-content');
+        else input.classList.remove('has-content');
+
+        if (path === 'company.gstin') updateGstSettingsVisibility();
+
+        if(input.hasAttribute('required')) {
+            validateStep(currentStep);
+        }
+
+        calculateTotals();
+        renderPreview();
+        autoSave();
+    }
+
+    function removeOptionalField(fieldId) {
+        const field = document.getElementById(fieldId);
+        if (!field) return;
+        field.value = '';
+        handleFormInput({ target: field });
+    }
+
+    function handleQuotationNoChange(e) {
+        const prefix = document.getElementById('quotationNoPrefix').textContent;
+        const suffix = e.target.value;
+        quotationData.project.quotationNo = prefix + suffix;
+        renderPreview();
+        autoSave();
+    }
+
+    // =================================================================
+    // LOGO UPLOAD
+    // =================================================================
+    function handleLogoUpload(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                quotationData.company.logo = event.target.result;
+                logoPreview.src = quotationData.company.logo;
+                logoPreviewContainer.style.display = 'flex';
+                logoPrompt.style.display = 'none';
+                renderPreview();
+                autoSave();
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    function removeLogo(update = true) {
+        if (!quotationData.company) quotationData.company = {};
+        quotationData.company.logo = '';
+        logoPreview.src = '';
+        logoUploadInput.value = '';
+        logoPreviewContainer.style.display = 'none';
+        logoPrompt.style.display = 'flex';
+        if (update) {
+            renderPreview();
+            autoSave();
+        }
+    }
+
+    // =================================================================
+    // PRESETS CATALOG HANDLER
+    // =================================================================
+    function handlePresetClick(e) {
+        const chip = e.target.closest('[data-preset]');
+        if (!chip) return;
+
+        const presetKey = chip.dataset.preset;
+        const preset = PRESETS[presetKey];
+        if (!preset) return;
+
+        const detailsInput = document.getElementById('itemWorkDetails');
+        const rateInput = document.getElementById('itemRate');
+        const roomInput = document.getElementById('itemRoom');
+
+        detailsInput.value = preset.details;
+        rateInput.value = preset.rate;
+        setMeasurementMode(preset.unit.toLowerCase() === 'rft' ? 'rft' : 'sft', false);
+        if (preset.room && !roomInput.value) {
+            roomInput.value = preset.room;
+        }
+
+        [detailsInput, rateInput, roomInput].forEach(inp => {
+            if (inp.value) inp.classList.add('has-content');
+        });
+
+        clearError(detailsInput);
+        clearError(rateInput);
+
+        detailsInput.focus();
+        showNotification(`⚡ Preset loaded: ${preset.unit} @ ₹${preset.rate}`);
+    }
+
+    // =================================================================
+    // WORK ITEMS & CALCULATIONS (STEP 4)
+    // =================================================================
+    function handleAddItem() {
+        const editIndexInput = document.getElementById('editing-item-index');
+        const editingIndex = parseInt(editIndexInput.value, 10);
+
+        const workDetailsInput = document.getElementById('itemWorkDetails');
+        const rateInput = document.getElementById('itemRate');
+        const roomInput = document.getElementById('itemRoom');
+        const lengthInput = document.getElementById('itemLength');
+        const widthInput = document.getElementById('itemWidth');
+        const qtyInput = document.getElementById('itemQty');
+
+        const workDetails = workDetailsInput.value.trim();
+        const rate = parseFloat(rateInput.value);
+        const length = parseFloat(lengthInput.value) || 0;
+        const width = parseFloat(widthInput.value) || 0;
+        const qty = parseFloat(qtyInput.value) || 0;
+
+        let isValid = true;
+        clearError(workDetailsInput);
+        clearError(rateInput);
+
+        if (!workDetails) {
+            showError(workDetailsInput, 'Work details are required.');
+            isValid = false;
+        }
+        if (isNaN(rate) || rate <= 0) {
+            showError(rateInput, 'A valid rate is required.');
+            isValid = false;
+        }
+        if (length <= 0 || (measurementMode === 'sft' && width <= 0) || (measurementMode === 'rft' && qty <= 0)) {
+            showNotification(`Please enter valid ${measurementMode === 'sft' ? 'length and width' : 'length and quantity'}.`, true);
+            isValid = false;
+        }
+
+        if (!isValid) return;
+
+        const unit = measurementMode === 'sft' ? 'Sft' : 'Rft';
+        const finalQty = measurementMode === 'sft' ? length * width : length * qty;
+        const amount = finalQty * rate;
+
+        const itemObj = {
+            id: editingIndex >= 0 && quotationData.items[editingIndex] ? quotationData.items[editingIndex].id : `item_${Date.now()}`,
+            details: workDetails,
+            room: roomInput.value.trim(),
+            length: length,
+            width: width,
+            qty: qty,
+            measurementMode: measurementMode,
+            finalQty: finalQty,
+            unit: unit,
+            rate: rate,
+            amount: amount
+        };
+
+        if (editingIndex >= 0 && editingIndex < quotationData.items.length) {
+            quotationData.items[editingIndex] = itemObj;
+            showNotification('✓ Item updated successfully');
+        } else {
+            quotationData.items.push(itemObj);
+            showNotification('✓ Item added to quotation');
+        }
+
+        resetItemForm();
+        updateWorkItemsUI();
+    }
+
+    function resetItemForm() {
+        document.getElementById('editing-item-index').value = '-1';
+        document.getElementById('itemWorkDetails').value = '';
+        document.getElementById('itemRate').value = '';
+        document.getElementById('itemRoom').value = '';
+        document.getElementById('itemLength').value = '';
+        document.getElementById('itemWidth').value = '';
+        document.getElementById('itemQty').value = '1';
+
+        ['itemWorkDetails', 'itemRate', 'itemRoom', 'itemLength', 'itemWidth', 'itemQty'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.classList.remove('has-content');
+        });
+
+        addItemBtn.textContent = '+ Add Item';
+        cancelEditBtn.style.display = 'none';
+        setMeasurementMode('sft', false);
+    }
+
+    function setMeasurementMode(mode, clearValues = true) {
+        measurementMode = mode === 'rft' ? 'rft' : 'sft';
+        const widthGroup = document.getElementById('item-width-group');
+        const qtyGroup = document.getElementById('item-qty-group');
+
+        if (widthGroup) widthGroup.style.display = measurementMode === 'sft' ? 'block' : 'none';
+        if (qtyGroup) qtyGroup.style.display = measurementMode === 'rft' ? 'block' : 'none';
+        if (sftModeBtn) {
+            sftModeBtn.classList.toggle('qb-button--primary', measurementMode === 'sft');
+            sftModeBtn.classList.toggle('qb-button--secondary', measurementMode !== 'sft');
+            sftModeBtn.setAttribute('aria-pressed', String(measurementMode === 'sft'));
+        }
+        if (rftModeBtn) {
+            rftModeBtn.classList.toggle('qb-button--primary', measurementMode === 'rft');
+            rftModeBtn.classList.toggle('qb-button--secondary', measurementMode !== 'rft');
+            rftModeBtn.setAttribute('aria-pressed', String(measurementMode === 'rft'));
+        }
+
+        if (clearValues) {
+            document.getElementById('itemLength').value = '';
+            document.getElementById('itemWidth').value = '';
+            document.getElementById('itemQty').value = '1';
+        }
+    }
+
+    function handleEditItem(index) {
+        if (index < 0 || index >= quotationData.items.length) return;
+        const item = quotationData.items[index];
+
+        document.getElementById('editing-item-index').value = index;
+        setMeasurementMode(item.measurementMode || (String(item.unit).toLowerCase() === 'rft' ? 'rft' : 'sft'), false);
+        document.getElementById('itemWorkDetails').value = item.details || '';
+        document.getElementById('itemRate').value = item.rate || '';
+        document.getElementById('itemRoom').value = item.room || '';
+        document.getElementById('itemLength').value = item.length || '';
+        document.getElementById('itemWidth').value = item.width || '';
+        document.getElementById('itemQty').value = item.qty || 1;
+
+        ['itemWorkDetails', 'itemRate', 'itemRoom', 'itemLength', 'itemWidth', 'itemQty'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el && el.value) el.classList.add('has-content');
+        });
+
+        addItemBtn.textContent = '💾 Update Item';
+        cancelEditBtn.style.display = 'inline-flex';
+        document.getElementById('add-item-form').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function handleDuplicateItem(index) {
+        if (index < 0 || index >= quotationData.items.length) return;
+        const item = quotationData.items[index];
+        const clone = { ...JSON.parse(JSON.stringify(item)), id: `item_${Date.now()}` };
+        quotationData.items.splice(index + 1, 0, clone);
+        showNotification('✓ Item duplicated');
+        updateWorkItemsUI();
+    }
+
+    function handleRemoveItem(index) {
+        if (index >= 0 && index < quotationData.items.length) {
+            quotationData.items.splice(index, 1);
+            showNotification('Item removed');
+            updateWorkItemsUI();
+        }
+    }
+
+    function renderWorkItems() {
+        if (quotationData.items.length > 0) {
+            workItemsListContainer.style.display = 'block';
+        } else {
+            workItemsListContainer.style.display = 'none';
+            return;
+        }
+
+        workItemsList.innerHTML = quotationData.items.map((item, index) => `
+            <div class="qb-work-item">
+                <div class="qb-work-item__details">
+                    <strong>#${index + 1} - ${item.details}</strong>
+                    <p>Qty: ${item.finalQty.toFixed(2)} (${item.unit}) | Rate: ₹${item.rate.toFixed(2)} | Amount: ₹${item.amount.toFixed(2)}</p>
+                    <p style="font-size: 0.8rem; color: var(--secondary-color);">
+                        ${item.room ? `Room: <span style="color:var(--primary-color);">${item.room}</span> | ` : ''}
+                        ${item.length && item.width ? `Size: ${item.length}ft × ${item.width}ft` : ''}
+                    </p>
+                </div>
+                <div class="qb-work-item__actions qb-work-item__btns">
+                    <button type="button" class="qb-button qb-button--secondary qb-button--icon" data-edit-item-index="${index}" title="Edit Item" style="padding: 0.4rem 0.6rem; font-size: 0.8rem;">✏️</button>
+                    <button type="button" class="qb-button qb-button--secondary qb-button--icon" data-duplicate-item-index="${index}" title="Duplicate Item" style="padding: 0.4rem 0.6rem; font-size: 0.8rem;">📋</button>
+                    <button type="button" class="qb-button qb-button--danger qb-button--icon" data-remove-item-index="${index}" title="Remove Item">&times;</button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function calculateTotals() {
+        const subtotal = (quotationData.items || []).reduce((acc, item) => acc + (parseFloat(item.amount) || 0), 0);
+        
+        // Discount Calculation
+        let discountAmount = 0;
+        const discountType = quotationData.discount ? quotationData.discount.type : 'none';
+        const discountVal = quotationData.discount ? parseFloat(quotationData.discount.value) || 0 : 0;
+
+        if (discountType === 'percent' && discountVal > 0) {
+            discountAmount = subtotal * (discountVal / 100);
+        } else if (discountType === 'flat' && discountVal > 0) {
+            discountAmount = Math.min(subtotal, discountVal);
+        }
+        discountAmount = Math.round(discountAmount * 100) / 100;
+
+        const taxableAmount = Math.max(0, subtotal - discountAmount);
+
+        // Tax / GST Calculation
+        const taxRate = quotationData.company.gstin && quotationData.tax
+            ? parseFloat(quotationData.tax.rate) || 0
+            : 0;
+        const taxAmount = (taxableAmount * taxRate) / 100;
+
+        const grandTotal = Math.round(taxableAmount + taxAmount);
+
+        quotationData.calculations = {
+            subtotal: subtotal,
+            discountAmount: discountAmount,
+            taxableAmount: taxableAmount,
+            taxAmount: taxAmount,
+            grandTotal: grandTotal,
+            amountInWords: numberToWords(grandTotal)
+        };
+    }
+
+    function updateWorkItemsUI() {
+        renderWorkItems();
+        calculateTotals();
+        renderPreview();
+        autoSave();
+    }
+
+    // =================================================================
+    // DIGITAL SIGNATURE CANVAS
+    // =================================================================
+    function initSignatureCanvas() {
+        if (!signatureCanvas || !sigCtx) return;
+
+        sigCtx.strokeStyle = '#0A2342';
+        sigCtx.lineWidth = 2.5;
+        sigCtx.lineCap = 'round';
+        sigCtx.lineJoin = 'round';
+
+        function getPos(e) {
+            const rect = signatureCanvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return {
+                x: (clientX - rect.left) * (signatureCanvas.width / rect.width),
+                y: (clientY - rect.top) * (signatureCanvas.height / rect.height)
+            };
+        }
+
+        function startDraw(e) {
+            isDrawing = true;
+            const pos = getPos(e);
+            lastX = pos.x;
+            lastY = pos.y;
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+            e.preventDefault();
+            const pos = getPos(e);
+            sigCtx.beginPath();
+            sigCtx.moveTo(lastX, lastY);
+            sigCtx.lineTo(pos.x, pos.y);
+            sigCtx.stroke();
+            lastX = pos.x;
+            lastY = pos.y;
+        }
+
+        function stopDraw() {
+            if (!isDrawing) return;
+            isDrawing = false;
+            quotationData.signature.dataUrl = signatureCanvas.toDataURL('image/png');
+            renderPreview();
+            autoSave();
+        }
+
+        signatureCanvas.addEventListener('mousedown', startDraw);
+        signatureCanvas.addEventListener('mousemove', draw);
+        signatureCanvas.addEventListener('mouseup', stopDraw);
+        signatureCanvas.addEventListener('mouseleave', stopDraw);
+
+        signatureCanvas.addEventListener('touchstart', startDraw, { passive: false });
+        signatureCanvas.addEventListener('touchmove', draw, { passive: false });
+        signatureCanvas.addEventListener('touchend', stopDraw);
+
+        if (clearSignatureBtn) {
+            clearSignatureBtn.addEventListener('click', () => {
+                sigCtx.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height);
+                quotationData.signature.dataUrl = "";
+                renderPreview();
+                autoSave();
+                showNotification('Signature cleared');
+            });
+        }
+
+        if (enableSigToggle) {
+            enableSigToggle.addEventListener('change', (e) => {
+                quotationData.signature.enabled = e.target.checked;
+                renderPreview();
+                autoSave();
+            });
+        }
+    }
+
+    // =================================================================
+    // EXPORT & SHARE FUNCTIONS
+    // =================================================================
+    function shareViaWhatsApp() {
+        const { company, client, project, items, calculations } = quotationData;
+        const docTitle = 'INVOICE';
+        
+        let text = `*${docTitle} SUMMARY*\n`;
+        text += `━━━━━━━━━━━━━━━━━━━━━\n`;
+        text += `*Invoice No:* ${project.quotationNo || 'N/A'}\n`;
+        text += `*Date:* ${project.quotationDate || 'N/A'}\n`;
+        text += `*Client:* ${client.name || 'Valued Client'}\n`;
+        text += `*Project:* ${project.name || 'Work'}\n`;
+        text += `━━━━━━━━━━━━━━━━━━━━━\n`;
+        text += `*Work Items:* (${items.length} items)\n`;
+        
+        items.forEach((item, idx) => {
+            text += `${idx + 1}. ${item.details} - ${item.finalQty} ${item.unit} @ ₹${item.rate} = ₹${item.amount.toFixed(2)}\n`;
+        });
+        
+        text += `━━━━━━━━━━━━━━━━━━━━━\n`;
+        text += `*Subtotal:* ₹${calculations.subtotal.toFixed(2)}\n`;
+        if (calculations.discountAmount > 0) {
+            text += `*Discount:* -₹${calculations.discountAmount.toFixed(2)}\n`;
+        }
+        if (calculations.taxAmount > 0) {
+            text += `*Tax / GST (${quotationData.tax.rate}%):* ₹${calculations.taxAmount.toFixed(2)}\n`;
+        }
+        text += `*GRAND TOTAL:* ₹${calculations.grandTotal.toLocaleString('en-IN')}/-\n`;
+        text += `*(${calculations.amountInWords})*\n`;
+        text += `━━━━━━━━━━━━━━━━━━━━━\n`;
+
+        if (company.upiId) {
+            text += `*Pay via UPI:* ${company.upiId}\n`;
+        }
+        text += `*From:* ${company.name || 'Our Company'} (${company.mobile || ''})\n\n`;
+        text += `_Generated via FalseQuote - India's #1 Quotation Software_`;
+
+        const phone = (client.mobile || '').replace(/[^0-9]/g, '');
+        const waUrl = `https://wa.me/${phone ? (phone.length === 10 ? '91' + phone : phone) : ''}?text=${encodeURIComponent(text)}`;
+        window.open(waUrl, '_blank');
+    }
+
+    function copyQuotationSummary() {
+        const { company, client, project, items, calculations } = quotationData;
+        const docTitle = 'INVOICE';
+        
+        let text = `${docTitle} - ${company.name || 'FalseQuote'}\n`;
+        text += `Invoice No: ${project.quotationNo || 'N/A'} | Date: ${project.quotationDate || 'N/A'}\n`;
+        text += `Client: ${client.name || 'Client'} | Project: ${project.name || 'Project'}\n\n`;
+        text += `ITEMS:\n`;
+        items.forEach((item, idx) => {
+            text += `${idx + 1}. ${item.details} (${item.finalQty} ${item.unit} × ₹${item.rate}) = ₹${item.amount.toFixed(2)}\n`;
+        });
+        text += `\nSubtotal: ₹${calculations.subtotal.toFixed(2)}\n`;
+        if (calculations.discountAmount > 0) text += `Discount: -₹${calculations.discountAmount.toFixed(2)}\n`;
+        if (calculations.taxAmount > 0) text += `Tax: ₹${calculations.taxAmount.toFixed(2)}\n`;
+        text += `GRAND TOTAL: ₹${calculations.grandTotal.toLocaleString('en-IN')}/-\n`;
+        text += `Amount in Words: ${calculations.amountInWords}\n`;
+
+        navigator.clipboard.writeText(text).then(() => {
+            showNotification('✓ Invoice summary copied to clipboard!');
+        }).catch(() => {
+            showNotification('Failed to copy summary.', true);
+        });
+    }
+
+    function printVectorDocument() {
+        window.print();
+    }
+
+    // =================================================================
+    // PDF GENERATION
+    // =================================================================
+    function stopPdFProcessingSound() {
+        if (pdfSoundTimeout) {
+            clearTimeout(pdfSoundTimeout);
+            pdfSoundTimeout = null;
+        }
+        if (!pdfAudioContext) return;
+        if (pdfAudioContext.state !== 'closed') {
+            const now = pdfAudioContext.currentTime;
+            const gainNode = pdfAudioContext.createGain();
+            gainNode.gain.setValueAtTime(0.08, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.8);
+            gainNode.connect(pdfAudioContext.destination);
+            const oscillator = pdfAudioContext.createOscillator();
+            oscillator.type = 'triangle';
+            oscillator.frequency.setValueAtTime(220, now);
+            oscillator.frequency.exponentialRampToValueAtTime(120, now + 0.8);
+            oscillator.connect(gainNode);
+            oscillator.start(now);
+            oscillator.stop(now + 0.8);
+        }
+    }
+
+    function playPdfProcessingSound() {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass) return;
+        if (!pdfAudioContext) {
+            pdfAudioContext = new AudioContextClass();
+        }
+
+        const ctx = pdfAudioContext;
+        if (ctx.state === 'suspended') {
+            ctx.resume();
+        }
+
+        const now = ctx.currentTime;
+        const toneSequence = [220, 280, 330, 280];
+        toneSequence.forEach((freq, index) => {
+            const oscillator = ctx.createOscillator();
+            const gainNode = ctx.createGain();
+            oscillator.type = 'triangle';
+            oscillator.frequency.setValueAtTime(freq, now + index * 0.12);
+            gainNode.gain.setValueAtTime(0.0001, now + index * 0.12);
+            gainNode.gain.exponentialRampToValueAtTime(0.025, now + index * 0.12 + 0.06);
+            gainNode.gain.exponentialRampToValueAtTime(0.0001, now + index * 0.12 + 0.25);
+            oscillator.connect(gainNode);
+            gainNode.connect(ctx.destination);
+            oscillator.start(now + index * 0.12);
+            oscillator.stop(now + index * 0.12 + 0.25);
+        });
+
+        pdfSoundTimeout = setTimeout(() => {
+            stopPdFProcessingSound();
+        }, 1800);
+    }
+
+    function playPdfSuccessSound() {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass) return;
+        if (!pdfAudioContext) pdfAudioContext = new AudioContextClass();
+
+        const ctx = pdfAudioContext;
+        const startSound = () => {
+            const now = ctx.currentTime;
+            const chord = [392.0, 523.25, 659.25, 783.99];
+            chord.forEach((frequency, index) => {
+                const oscillator = ctx.createOscillator();
+                const gainNode = ctx.createGain();
+                const start = now + index * 0.08;
+                oscillator.type = index % 2 === 0 ? 'sawtooth' : 'triangle';
+                oscillator.frequency.setValueAtTime(frequency, start);
+                gainNode.gain.setValueAtTime(0.0001, start);
+                gainNode.gain.exponentialRampToValueAtTime(0.12, start + 0.04);
+                gainNode.gain.exponentialRampToValueAtTime(0.0001, start + 0.52);
+                oscillator.connect(gainNode);
+                gainNode.connect(ctx.destination);
+                oscillator.start(start);
+                oscillator.stop(start + 0.55);
+            });
+        };
+
+        if (ctx.state === 'suspended') {
+            ctx.resume().then(startSound).catch(() => {});
+        } else {
+            startSound();
+        }
+
+        if ('speechSynthesis' in window) {
+            const utterance = new SpeechSynthesisUtterance(`Your PDF is ready. Pay ${requiredPaymentAmount} rupees to download your PDF.`);
+            utterance.rate = 1.3;
+            utterance.pitch = 0.95;
+            utterance.volume = 1;
+            utterance.lang = 'en-US';
+            window.speechSynthesis.cancel();
+            window.speechSynthesis.speak(utterance);
+        }
+    }
+
+    function updatePdfProcessingProgress(percent, text) {
+        const statusEl = document.getElementById('pdf-status-text');
+        const progressEl = document.getElementById('pdf-progress-percent');
+        const barEl = document.getElementById('pdf-progress-bar');
+        if (statusEl) statusEl.textContent = text;
+        if (progressEl) progressEl.textContent = `${Math.round(percent)}%`;
+        if (barEl) barEl.style.width = `${Math.max(0, Math.min(percent, 100))}%`;
+    }
+
+    function startPdfProcessingLoop() {
+        pdfProcessingProgress = 0;
+        pdfProcessingStart = performance.now();
+        clearInterval(pdfProcessingInterval);
+        pdfProcessingInterval = setInterval(() => {
+            const elapsed = performance.now() - pdfProcessingStart;
+            const progress = Math.min(96, (elapsed / 10000) * 100);
+            pdfProcessingProgress = progress;
+            const statuses = [
+                'Preparing your invoice...',
+                'Calculating final details...',
+                'Creating high-quality PDF...',
+                'Optimizing document quality...',
+                'Finalizing your PDF...'
+            ];
+            const statusIndex = Math.min(statuses.length - 1, Math.floor(progress / 25));
+            updatePdfProcessingProgress(progress, statuses[statusIndex]);
+        }, 180);
+    }
+
+    function stopPdfProcessingLoop() {
+        clearInterval(pdfProcessingInterval);
+        pdfProcessingInterval = null;
+        if (pdfProcessingProgress < 100) {
+            updatePdfProcessingProgress(100, 'Finalizing your PDF...');
+        }
+    }
+
+    function showProcessingOverlay() {
+        const overlay = document.getElementById('pdf-processing-overlay');
+        if (overlay) {
+            overlay.classList.add('is-visible');
+        }
+        updatePdfProcessingProgress(0, 'Preparing your invoice...');
+        startPdfProcessingLoop();
+        playPdfProcessingSound();
+    }
+
+    function hideProcessingOverlay() {
+        const overlay = document.getElementById('pdf-processing-overlay');
+        if (overlay) {
+            overlay.classList.remove('is-visible');
+        }
+        stopPdfProcessingLoop();
+        stopPdFProcessingSound();
+    }
+
+    function showSuccessOverlay() {
+        const overlay = document.getElementById('pdf-success-overlay');
+        if (overlay) {
+            overlay.classList.add('is-visible');
+            const confettiBox = overlay.querySelector('.pdf-success-confetti');
+            if (confettiBox) {
+                confettiBox.innerHTML = '';
+                const colors = ['#ffcc00', '#ff5d8f', '#4ade80', '#60a5fa', '#a78bfa', '#f97316'];
+                for (let i = 0; i < 28; i++) {
+                    const piece = document.createElement('span');
+                    piece.className = 'pdf-confetti-piece';
+                    const angle = (Math.PI * 2 * i) / 28;
+                    const distance = 80 + Math.random() * 110;
+                    const x = Math.cos(angle) * distance;
+                    const y = Math.sin(angle) * distance;
+                    piece.style.background = colors[i % colors.length];
+                    piece.style.left = '50%';
+                    piece.style.top = '52%';
+                    piece.style.setProperty('--x', x.toFixed(1));
+                    piece.style.setProperty('--y', y.toFixed(1));
+                    piece.style.setProperty('--r', `${(Math.random() * 260 - 130).toFixed(1)}deg`);
+                    piece.style.animationDelay = `${(i * 35) / 1000}s`;
+                    confettiBox.appendChild(piece);
+                }
+            }
+        }
+        playPdfSuccessSound();
+    }
+
+    function hideSuccessOverlay() {
+        const overlay = document.getElementById('pdf-success-overlay');
+        if (overlay) {
+            overlay.classList.remove('is-visible');
+        }
+    }
+
+    function buildPdfFileName() {
+        const companyName = (quotationData.company && quotationData.company.name ? quotationData.company.name.trim() : '').replace(/\\|\/|:|\*|\?|"|<|>|\||/g, '').trim();
+        const safeCompanyName = companyName || 'INVOICE';
+        const today = new Date();
+        const day = String(today.getDate()).padStart(2, '0');
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const year = today.getFullYear();
+        const dateLabel = `${day}-${month}-${year}`;
+        const finalName = `${safeCompanyName} - INVOICE - ${dateLabel}.pdf`;
+        return finalName;
+    }
+
+    async function buildPdfDocument() {
+        if (typeof html2canvas === 'undefined' || !window.jspdf) {
+            throw new Error('PDF libraries are unavailable.');
+        }
+
+        const { jsPDF } = window.jspdf;
+        const element = document.getElementById('live-preview');
+        if (!element) {
+            throw new Error('Invoice preview not found.');
+        }
+
+        const exportDocument = element.cloneNode(true);
+        exportDocument.classList.add('pdf-export-document');
+        exportDocument.removeAttribute('id');
+        Object.assign(exportDocument.style, {
+            position: 'absolute',
+            left: '-10000px',
+            top: '0',
+            transform: 'none',
+            boxShadow: 'none',
+            borderRadius: '0'
+        });
+        document.body.appendChild(exportDocument);
+
+        try {
+            await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+            const canvas = await html2canvas(exportDocument, {
+                scale: 4,
+                useCORS: true,
+                logging: false,
+                allowTaint: true,
+                backgroundColor: '#ffffff',
+                windowWidth: 794,
+                scrollX: 0,
+                scrollY: 0
+            });
+
+            const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+            const pdfPageWidth = pdf.internal.pageSize.getWidth();
+            const pdfPageHeight = pdf.internal.pageSize.getHeight();
+            const imgWidth = canvas.width;
+            const imgHeight = canvas.height;
+            const ratio = pdfPageWidth / imgWidth;
+            const scaledImgHeight = imgHeight * ratio;
+            const addCanvasToPdf = (sourceCanvas, heightInMm) => {
+                const imageData = sourceCanvas.toDataURL('image/png');
+                pdf.addImage(imageData, 'PNG', 0, 0, pdfPageWidth, heightInMm);
+            };
+            const canvasScale = canvas.width / exportDocument.offsetWidth;
+            const safeBreaks = [...exportDocument.querySelectorAll('tr, .invoice-client-project-info, .invoice-summary, .invoice-note-section, .invoice-signature-area, .invoice-footer')]
+                .map(node => Math.round((node.getBoundingClientRect().bottom - exportDocument.getBoundingClientRect().top) * canvasScale))
+                .filter(position => position > 0 && position < imgHeight)
+                .sort((first, second) => first - second);
+
+            if (scaledImgHeight <= pdfPageHeight) {
+                addCanvasToPdf(canvas, scaledImgHeight);
+            } else {
+                const pageCanvasHeight = Math.floor(pdfPageHeight / ratio);
+                let remainingHeight = imgHeight;
+                let sourceY = 0;
+                let pageNum = 0;
+
+                while (remainingHeight > 0) {
+                    const targetHeight = Math.floor(Math.min(pageCanvasHeight, remainingHeight));
+                    const nextBreak = safeBreaks.filter(position => position > sourceY + 120 && position <= sourceY + targetHeight).pop();
+                    const sliceHeight = nextBreak ? nextBreak - sourceY : targetHeight;
+                    if (sliceHeight <= 0) break;
+                    const pageCanvas = document.createElement('canvas');
+                    pageCanvas.width = imgWidth;
+                    pageCanvas.height = sliceHeight;
+                    const pageCtx = pageCanvas.getContext('2d');
+                    pageCtx.fillStyle = '#ffffff';
+                    pageCtx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+                    pageCtx.drawImage(canvas, 0, sourceY, imgWidth, sliceHeight, 0, 0, imgWidth, sliceHeight);
+                    const sliceScaledHeight = sliceHeight * ratio;
+
+                    if (pageNum > 0) pdf.addPage();
+                    addCanvasToPdf(pageCanvas, sliceScaledHeight);
+
+                    sourceY += sliceHeight;
+                    remainingHeight -= sliceHeight;
+                    pageNum++;
+                }
+            }
+
+            const output = { pdf, fileName: buildPdfFileName(), pageCount: pdf.getNumberOfPages() };
+            return output;
+        } finally {
+            exportDocument.remove();
+        }
+    }
+
+    async function generatePdf() {
+        if (!validateAllRequiredFields()) {
+            return;
+        }
+
+        generatedPdfFileName = buildPdfFileName();
+
+        const nextButton = document.getElementById('next-btn');
+        const originalText = nextButton ? nextButton.textContent : 'Generate PDF';
+        const exportCard = document.getElementById('export-card');
+
+        if (nextButton) {
+            nextButton.disabled = true;
+            nextButton.textContent = 'Generating PDF...';
+        }
+        if (exportCard) {
+            exportCard.style.display = 'none';
+        }
+
+        preparedPdfDocument = null;
+        hideSuccessOverlay();
+        showProcessingOverlay();
+
+        try {
+            const pdfGenerationPromise = buildPdfDocument();
+            const minimumAnimationDelay = new Promise((resolve) => setTimeout(resolve, 10000));
+            const [preparedPdf] = await Promise.all([pdfGenerationPromise, minimumAnimationDelay]);
+            preparedPdfDocument = preparedPdf;
+            preparedPdfDocument.fileName = generatedPdfFileName;
+            generatedPageCount = preparedPdf.pageCount;
+            requiredPaymentAmount = ADMIN_PAYMENT_AMOUNT + Math.max(0, generatedPageCount - 2) * 10;
+            document.getElementById('pdf-payment-offer').textContent = `Pay ₹${requiredPaymentAmount} to unlock your invoice PDF (${generatedPageCount} page${generatedPageCount === 1 ? '' : 's'}).`;
+            document.getElementById('pay-pdf-btn').textContent = `Pay ₹${requiredPaymentAmount} to Download PDF`;
+            setPaymentApproval(false);
+            updatePdfProcessingProgress(100, 'Finalizing your PDF...');
+            hideProcessingOverlay();
+            showSuccessOverlay();
+            if (window.FalseQuoteAnalytics) {
+                window.FalseQuoteAnalytics.track('invoice_created', { documentType: 'invoice', documentNumber: quotationData.project.quotationNo });
+            }
+        } catch (error) {
+            console.error('PDF Generation Error:', error);
+            hideProcessingOverlay();
+            showNotification('❌ Failed to generate PDF. Please review the form and try again.', true);
+        } finally {
+            if (nextButton) {
+                nextButton.disabled = false;
+                nextButton.textContent = originalText;
+            }
+            if (exportCard) {
+                exportCard.style.display = currentStep === totalSteps ? 'none' : 'block';
+            }
+        }
+    }
+
+    function downloadPreparedPdf() {
+        if (!paymentApproved) {
+            showNotification('Payment must be verified before downloading the PDF.', true);
+            return;
+        }
+        if (!preparedPdfDocument || !preparedPdfDocument.pdf) {
+            showNotification('PDF is not ready yet. Please generate it again.', true);
+            return;
+        }
+
+        const downloadBtn = document.getElementById('download-ready-pdf-btn');
+        if (downloadBtn) {
+            downloadBtn.disabled = true;
+        }
+
+        const fileNameToUse = preparedPdfDocument.fileName || generatedPdfFileName || buildPdfFileName();
+        preparedPdfDocument.pdf.save(fileNameToUse);
+        
+        if (window.FalseQuoteAnalytics) {
+            window.FalseQuoteAnalytics.track('invoice_pdf_download', { documentType: 'invoice', documentNumber: quotationData.project.quotationNo });
+        }
+        
+        showNotification('✅ PDF download started.');
+
+        setTimeout(() => {
+            if (downloadBtn) {
+                downloadBtn.disabled = false;
+            }
+        }, 700);
+    }
+
+    function setPaymentApproval(approved) {
+        paymentApproved = approved;
+        const downloadBtn = document.getElementById('download-ready-pdf-btn');
+        if (downloadBtn) downloadBtn.disabled = !approved;
+    }
+
+    async function startRazorpayPayment() {
+        const payButton = document.getElementById('pay-pdf-btn');
+        const quotationNumber = quotationData?.project?.quotationNo;
+        if (!quotationNumber) return showNotification('Invoice number is not available yet.', true);
+        if (typeof Razorpay === 'undefined') return showNotification('Razorpay checkout is unavailable.', true);
+        if (payButton) { payButton.disabled = true; payButton.textContent = 'Opening Payment...'; }
+        try {
+            const response = await fetch(`${PAYMENT_API_BASE_URL}/api/razorpay/orders`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ quotationNumber, documentType: 'invoice', pageCount: generatedPageCount, clientName: quotationData.client?.name || '', userId: `invoice-${Date.now()}`, sessionId: `invoice-${Date.now()}` })
+            });
+            const result = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(result.error || 'Unable to start Razorpay payment.');
+            activePaymentRequestId = result.paymentRequest.paymentRequestId;
+            const checkout = new Razorpay({
+                key: result.keyId, order_id: result.order.id, amount: result.order.amount, currency: result.order.currency,
+                name: 'FalseQuote', description: 'Invoice PDF access', prefill: { name: quotationData.client?.name || '' },
+                notes: { quotationNumber },
+                handler: async (payment) => {
+                    const verifyResponse = await fetch(`${PAYMENT_API_BASE_URL}/api/razorpay/verify`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ paymentRequestId: activePaymentRequestId, ...payment }) });
+                    const verification = await verifyResponse.json().catch(() => ({}));
+                    if (!verifyResponse.ok || verification.paymentRequest?.status !== 'approved') throw new Error(verification.error || 'Payment verification failed.');
+                    setPaymentApproval(true);
+                    document.getElementById('payment-status-message').textContent = 'Payment Verified\nYour invoice PDF is ready.';
+                    showNotification('Payment verified. Your invoice PDF is ready.');
+                },
+                modal: { ondismiss: () => { if (payButton) { payButton.disabled = false; payButton.textContent = `Pay ₹${requiredPaymentAmount} to Download PDF`; } } }
+            });
+            checkout.on('payment.failed', event => showNotification(event.error?.description || 'Payment failed.', true));
+            checkout.open();
+        } catch (error) {
+            if (payButton) { payButton.disabled = false; payButton.textContent = `Pay ₹${requiredPaymentAmount} to Download PDF`; }
+            showNotification(error.message, true);
+        }
+    }
+
+    // =================================================================
+    // LIVE PREVIEW RENDERER
+    // =================================================================
+    function renderPreview() {
+        if (!livePreviewContainer) return;
+
+        const { company, client, project, items, discount, tax, signature, paymentQr, payment, paymentMethod, bankDetails, calculations, notes, selectedTemplate, selectedColor } = quotationData;
+        const safeBankDetails = bankDetails || {};
+
+        const logoHtml = company.logo 
+            ? `<img src="${company.logo}" alt="logo" class="invoice-header__logo">`
+            : '';
+
+        const templateClass = selectedTemplate === 'default' ? '' : selectedTemplate;
+        const docTitle = 'INVOICE';
+        const themeColors = {
+            default: { accent: selectedColor, text: '#1F2937', border: '#E5E7EB', soft: '#F0FDFA' },
+            'quotation-document--purple': { accent: '#8E2DE2', text: '#4C1D95', border: '#E9D5FF', soft: '#FAF5FF' },
+            'quotation-document--forest-green': { accent: '#4CAF50', text: '#004D40', border: '#C8E6C9', soft: '#F1F8E9' },
+            'quotation-document--warm-orange': { accent: '#FF8C00', text: '#8B4513', border: '#FFF8DC', soft: '#FFF7ED' },
+            'quotation-document--indigo-violet': { accent: '#9370DB', text: '#483D8B', border: '#E6E6FA', soft: '#F5F3FF' }
+        }[selectedTemplate] || { accent: selectedColor, text: '#1F2937', border: '#E5E7EB', soft: '#F0FDFA' };
+        const amountReceived = Math.min(Math.max(parseFloat(payment && payment.received) || 0, 0), calculations.grandTotal);
+        const pendingPayment = Math.max(calculations.grandTotal - amountReceived, 0);
+        const totalSft = items.filter(item => (item.measurementMode || String(item.unit).toLowerCase()) === 'sft').reduce((total, item) => total + (parseFloat(item.finalQty) || 0), 0);
+        const totalRft = items.filter(item => (item.measurementMode || String(item.unit).toLowerCase()) === 'rft').reduce((total, item) => total + (parseFloat(item.finalQty) || 0), 0);
+        let qrCodeHtml = '';
+        if (paymentMethod === 'bank') {
+            qrCodeHtml = `<div class="invoice-upi-payment__details"><strong>Bank Transfer</strong><span>Account Holder Name: ${safeBankDetails.accountHolder || ''}</span><span>Bank Name: ${safeBankDetails.bankName || ''}</span><span>Account Number: ${safeBankDetails.accountNumber || ''}</span><span>IFSC Code: ${safeBankDetails.ifsc || ''}</span><span>Branch Name: ${safeBankDetails.branch || ''}</span><span>Account Type: ${safeBankDetails.accountType || ''}</span></div>`;
+        } else if (company.upiId) {
+            const upiUrl = `upi://pay?pa=${encodeURIComponent(company.upiId)}&pn=${encodeURIComponent(company.upiName || company.name || 'User')}&am=${calculations.grandTotal.toFixed(2)}&cu=INR&tn=${encodeURIComponent('Invoice Payment')}`;
+            const qrImgSrc = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(upiUrl)}&margin=2`;
+            qrCodeHtml = `
+                <div class="invoice-upi-payment">
+                    <img src="${qrImgSrc}" alt="User UPI payment QR code" class="invoice-upi-payment__qr">
+                    <div class="invoice-upi-payment__details">
+                        <strong>Payment Received Here</strong>
+                        <span>UPI ID: ${company.upiId}</span>
+                        <span>Payee Name: ${company.upiName || company.name || 'User'}</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Signature image in preview
+        const signatureImgHtml = (signature && signature.enabled && signature.dataUrl)
+            ? `<img src="${signature.dataUrl}" alt="Signature" style="max-height: 26px; max-width: 90px; object-fit: contain; margin-bottom: 2px; display: block; margin-left: auto; margin-right: auto;">`
+            : '';
+
+        const previewHTML = `
+            <svg width="0" height="0" style="position:absolute;pointer-events:none;">
+                <defs>
+                    <symbol id="icon-note" viewBox="0 0 24 24"><path fill="currentColor" d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></symbol>
+                    <symbol id="icon-shield" viewBox="0 0 24 24"><path fill="currentColor" d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12c5.16-1.26 9-6.45 9-12V5l-9-4zm-2 15l-3.5-3.5l1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></symbol>
+                </defs>
+            </svg>
+
+            <header class="invoice-header">
+                <div class="invoice-header__logo-name">
+                    ${logoHtml}
+                    <h2 class="invoice-header__company-name">${company.name || 'Your Company Name'}</h2>
+                </div>
+                <div class="invoice-header__contact">
+                    ${company.address ? `<p>${company.address}</p>` : ''}
+                    <p>
+                        ${company.mobile || ''}
+                        ${company.mobile && company.email ? ' | ' : ''}
+                        ${company.email || ''}
+                    </p>
+                    ${company.website ? `<p>${company.website}</p>` : ''}
+                    ${company.gstin ? `<p><strong>GSTIN:</strong> ${company.gstin}</p>` : ''}
+                    ${company.upiId ? `<p><strong>UPI:</strong> ${company.upiId}</p>` : ''}
+                </div>
+            </header>
+
+            <section class="invoice-title-info">
+                <div class="invoice-title-wrapper">
+                    <h1 class="invoice-title">${docTitle}</h1>
+                </div>
+                <div class="invoice-info">
+                    <div class="invoice-info__item"><span>Invoice No.</span><strong>${project.quotationNo || '(auto)'}</strong></div>
+                    <div class="invoice-info__item"><span>Date</span><strong>${project.quotationDate || '(auto)'}</strong></div>
+                    <div class="invoice-info__item"><span>Due Date</span><strong>${project.validityDate || '(auto)'}</strong></div>
+                </div>
+            </section>
+
+            <section class="invoice-client-project-info">
+                <div class="invoice-bill-to">
+                    <h3>BILL TO</h3>
+                    ${client.name ? `<p><strong>Client Name:</strong> ${client.name}</p>` : ''}
+                    ${client.mobile ? `<p><strong>Mobile Number:</strong> ${client.mobile}</p>` : ''}
+                    ${client.siteAddress ? `<p><strong>Site Address:</strong> ${client.siteAddress}</p>` : ''}
+                    ${!client.name && !client.mobile && !client.siteAddress ? '<p style="color: #A8A8B3;">(Client details will appear here)</p>' : ''}
+                </div>
+                <div class="invoice-project">
+                    <h3>PROJECT DETAILS &amp; WORK</h3>
+                    ${project.name ? `<p><strong>Project Name:</strong> ${project.name}</p>` : ''}
+                    ${project.projectType ? `<p><strong>Project Type:</strong> ${project.projectType}</p>` : ''}
+                    ${project.workType ? `<p><strong>Work Type:</strong> ${project.workType}</p>` : ''}
+                    ${project.workStatus ? `<p><strong>Work Status:</strong> ${project.workStatus}</p>` : ''}
+                    ${!project.name && !project.projectType && !project.workType ? '<p style="color: #A8A8B3;">(Project details will appear here)</p>' : ''}
+                </div>
+            </section>
+            
+            ${items.length > 0 ? `
+                <div class="invoice-table-wrapper">
+                    <table class="invoice-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 4%;">Sl.</th>
+                                <th style="width: 14%;">Room/Area</th>
+                                <th style="width: 27%;">Work Details & Specification</th>
+                                <th style="width: 5%;">L(ft)</th>
+                                <th style="width: 5%;">W(ft)</th>
+                                <th style="width: 8%;">Qty/Area</th>
+                                <th style="width: 6%;">Unit</th>
+                                <th style="width: 8%;">Rate</th>
+                                <th style="width: 10%;">Amount</th>
+                                <th style="width: 13%;">Remark</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${items.map((item, index) => `
+                                <tr>
+                                    <td class="col-sl">${index + 1}</td>
+                                    <td>${item.room || '-'}</td>
+                                    <td>${item.details.replace(/\n/g, '<br>')}</td>
+                                    <td>${item.length > 0 ? item.length : '-'}</td>
+                                    <td>${item.width > 0 ? item.width : '-'}</td>
+                                    <td class="col-qty">${item.finalQty.toFixed(2)}</td>
+                                    <td class="col-unit measurement-unit--${item.measurementMode || String(item.unit).toLowerCase()}">${item.unit}</td>
+                                    <td class="col-rate">${item.rate.toFixed(2)}</td>
+                                    <td class="col-amount">${item.amount.toFixed(2)}</td>
+                                    <td class="col-remark">${item.remark || '-'}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+
+                <section class="invoice-summary">
+                    <div class="invoice-amount-words">
+                        <span>Amount In Words:</span>
+                            <p>${calculations.amountInWords || '...'}</p>
+                    </div>
+                    <div class="invoice-totals">
+                        ${totalSft > 0 ? `<div class="invoice-totals__row"><span class="measurement-unit--sft">Total SFT</span><strong>${totalSft.toFixed(2)} SFT</strong></div>` : ''}
+                        ${totalRft > 0 ? `<div class="invoice-totals__row"><span class="measurement-unit--rft">Total RFT</span><strong class="measurement-unit--rft">${totalRft.toFixed(2)} RFT</strong></div>` : ''}
+                        <div class="invoice-totals__row">
+                            <span>Subtotal</span>
+                            <strong>₹ ${calculations.subtotal.toFixed(2)}</strong>
+                        </div>
+                        ${calculations.discountAmount > 0 ? `
+                            <div class="invoice-totals__row" style="color: #28a745;">
+                                <span>Discount (${discount.type === 'percent' ? discount.value + '%' : 'Flat'})</span>
+                                <strong>- ₹ ${calculations.discountAmount.toFixed(2)}</strong>
+                            </div>
+                            <div class="invoice-totals__row">
+                                <span>Taxable Amount</span>
+                                <strong>₹ ${calculations.taxableAmount.toFixed(2)}</strong>
+                            </div>
+                        ` : ''}
+                        ${company.gstin && tax && tax.rate > 0 ? `
+                            <div class="invoice-totals__row">
+                                <span>GST (${tax.rate}%)</span>
+                                <strong>₹ ${calculations.taxAmount.toFixed(2)}</strong>
+                            </div>
+                        ` : ''}
+                        <div class="invoice-totals__row grand-total">
+                            <span>GRAND TOTAL</span>
+                            <span>₹ ${calculations.grandTotal.toFixed(2)}</span>
+                        </div>
+                    </div>
+                </section>
+            ` : `
+                <div style="text-align: center; color: #A8A8B3; padding: 40px 0; border: 1px dashed var(--quote-border-light); border-radius: 6px; margin: 10px 0;">
+                    <p style="font-size: 8px; font-weight: bold;">Work Items will appear here</p>
+                </div>
+            `}
+
+            <section class="invoice-note-section">
+                <div class="invoice-note">
+                    <h3>NOTE</h3>
+                    <div class="invoice-note-payment-row">
+                        <div class="invoice-payment-details">
+                            <div class="invoice-payment-item"><span>Grand Total</span><strong>₹ ${calculations.grandTotal.toFixed(2)}</strong></div>
+                            <div class="invoice-payment-item"><span>Amount Received</span><strong>₹ ${amountReceived.toFixed(2)}</strong></div>
+                            <div class="invoice-payment-item pending"><span>Pending Payment</span><strong>₹ ${pendingPayment.toFixed(2)}</strong></div>
+                        </div>
+                        ${qrCodeHtml}
+                    </div>
+                    ${notes ? `<p style="font-size: 6px; white-space: pre-wrap; margin-top: 5px;">${notes}</p>` : ''}
+                </div>
+            </section>
+
+            <section class="invoice-signature-area">
+                <div class="invoice-signature-col">
+                        ${signatureImgHtml}
+                        <span class="invoice-signature-line"></span>
+                        Authorized Signature
+                </div>
+                <div class="invoice-signature-col"><span class="invoice-signature-line"></span>Client Signature</div>
+            </section>
+
+            <footer class="invoice-footer">
+                <p>Thank you for choosing our service</p>
+                ${(company.mobile || company.email || company.website) ? `
+                    <p>
+                        ${[company.mobile, company.email, company.website].filter(Boolean).join(' | ')}
+                    </p>
+                ` : ''}
+            </footer>
+        `;
+
+        livePreviewContainer.className = `invoice-document quotation-document ${templateClass}`;
+        livePreviewContainer.style.setProperty('--quote-accent-gold', themeColors.accent);
+        livePreviewContainer.style.setProperty('--quote-text-dark', themeColors.text);
+        livePreviewContainer.style.setProperty('--quote-border-light', themeColors.border);
+        livePreviewContainer.style.setProperty('--invoice-accent-bg-soft', themeColors.soft);
+        livePreviewContainer.innerHTML = previewHTML;
+
+        if (mobilePreviewContainer) {
+            mobilePreviewContainer.className = `invoice-document quotation-document ${templateClass}`;
+            mobilePreviewContainer.style.setProperty('--quote-accent-gold', themeColors.accent);
+            mobilePreviewContainer.style.setProperty('--quote-text-dark', themeColors.text);
+            mobilePreviewContainer.style.setProperty('--quote-border-light', themeColors.border);
+            mobilePreviewContainer.style.setProperty('--invoice-accent-bg-soft', themeColors.soft);
+            mobilePreviewContainer.innerHTML = previewHTML;
+        }
+    }
+
+    // =================================================================
+    // DATA PERSISTENCE
+    // =================================================================
+    const debounce = (func, delay) => {
+        let timeout;
+        return function(...args) {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(this, args), delay);
+        };
+    };
+
+    function generateQuotationId() {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const randomPart = String(Math.floor(Math.random() * 1000)).padStart(3, '0');
+        return `INV-${year}${month}${day}-${randomPart}`;
+    }
+
+    const autoSave = debounce(() => {
+        saveDraft();
+    }, 1000);
+
+    function saveDraft(showNotificationMsg = false) {
+        // Data saving placeholder
+    }
+
+    function loadOrCreateDraft() {
+        const newId = generateQuotationId();
+        quotationData = { ...JSON.parse(JSON.stringify(initialData)), id: newId };
+        updateQuotationInfo(true);
+    }
+
+    function clearAndCreateNewDraft() {
+        if (confirm('To start a new quotation, you can simply refresh the page. Would you like to refresh now?')) {
+            window.location.reload();
+        }
+    }
+
+    // =================================================================
+    // QUOTATION INFO
+    // =================================================================
+    function getCompanyShortName(name) {
+        if (!name || typeof name !== 'string') return 'QT';
+        return name.split(' ')
+            .map(word => word.charAt(0))
+            .join('')
+            .toUpperCase() || 'QT';
+    }
+
+    function updateQuotationInfo(forceDateRecalc = false) {
+        const shortName = getCompanyShortName(quotationData.company.name);
+        const now = new Date();
+        
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const suffix = (quotationData.project.quotationNo || '').split('-').pop() || String(Math.floor(Math.random() * 900) + 100);
+
+        quotationData.project.quotationNo = `INV-${year}${month}${day}-${suffix}`;
+
+        if (forceDateRecalc || !quotationData.project.quotationDate) {
+            quotationData.project.quotationDate = formatDate(now);
+            const validity = new Date(now);
+            validity.setDate(validity.getDate() + 15);
+            quotationData.project.validityDate = `15 Days (${formatDate(validity)})`;
+            quotationData.project.validityDate = formatDate(validity);
+        }
+    }
+
+    // =================================================================
+    // VALIDATION
+    // =================================================================
+    function showError(input, message) {
+        const group = input.closest('.qb-input-group');
+        if (!group) return;
+        const errorEl = group.querySelector('.qb-input-error');
+        input.classList.add('is-invalid');
+        if (errorEl) errorEl.textContent = message;
+    }
+
+    function clearError(input) {
+        const group = input.closest('.qb-input-group');
+        if (!group) return;
+        const errorEl = group.querySelector('.qb-input-error');
+        input.classList.remove('is-invalid');
+        if (errorEl) errorEl.textContent = '';
+    }
+
+    function validateAllRequiredFields() {
+        let firstInvalid = null;
+        form.querySelectorAll('input[required], textarea[required]').forEach(input => {
+            clearError(input);
+            if (quotationData.items.length > 0 && ['itemWorkDetails', 'itemRate'].includes(input.id)) {
+                return;
+            }
+            if (!input.value.trim()) {
+                const label = document.querySelector(`label[for="${input.id}"]`);
+                const fieldName = label ? label.textContent.replace(' *', '') : 'This field';
+                showError(input, `${fieldName} is required.`);
+                if (!firstInvalid) firstInvalid = input;
+            }
+        });
+
+        if (quotationData.items.length === 0) {
+            showNotification('Please add at least one work item before generating the PDF.', true);
+            const workItemArea = document.getElementById('itemWorkDetails');
+            if (workItemArea) {
+                workItemArea.focus();
+                workItemArea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            return false;
+        }
+
+        if (firstInvalid) {
+            firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            firstInvalid.focus();
+            showNotification('Please complete the required fields before generating the PDF.', true);
+            return false;
+        }
+
+        return true;
+    }
+
+    function validateStep(step) {
+        let isValid = true;
+        const stepContent = document.querySelector(`.qb-step-content[data-step-content="${step}"]`);
+        if (!stepContent) return true;
+
+        stepContent.querySelectorAll('.is-invalid').forEach(el => clearError(el));
+        const inputsToValidate = step === 4 && quotationData.items.length > 0
+            ? []
+            : stepContent.querySelectorAll('input[required], textarea[required]');
+        
+        inputsToValidate.forEach(input => {
+            if (!input.value.trim()) {
+                const label = document.querySelector(`label[for="${input.id}"]`);
+                const fieldName = label ? label.textContent.replace(' *', '') : 'This field';
+                showError(input, `${fieldName} is required.`);
+                isValid = false;
+            } else {
+                clearError(input);
+            }
+        });
+
+        if (step === 4 && quotationData.items.length === 0) {
+            showNotification('Please add at least one work item to proceed.', true);
+            isValid = false;
+        }
+
+        return isValid;
+    }
+
+    // =================================================================
+    // UTILITIES
+    // =================================================================
+    function formatDate(date) {
+        const d = new Date(date);
+        const day = String(d.getDate()).padStart(2, '0');
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const year = d.getFullYear();
+        return `${day}-${month}-${year}`;
+    }
+
+    // Indian Number to Words (Rupees)
+    function numberToWords(num) {
+        if (!num || isNaN(num) || num <= 0) return 'Rupees Zero Only';
+
+        const a = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+        const b = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+
+        function inWords(n) {
+            if (n < 20) return a[n];
+            if (n < 100) return b[Math.floor(n / 10)] + (n % 10 !== 0 ? ' ' + a[n % 10] : '');
+            if (n < 1000) return a[Math.floor(n / 100)] + ' Hundred' + (n % 100 !== 0 ? ' and ' + inWords(n % 100) : '');
+            if (n < 100000) return inWords(Math.floor(n / 1000)) + ' Thousand' + (n % 1000 !== 0 ? ' ' + inWords(n % 1000) : '');
+            if (n < 10000000) return inWords(Math.floor(n / 100000)) + ' Lakh' + (n % 100000 !== 0 ? ' ' + inWords(n % 100000) : '');
+            return inWords(Math.floor(n / 10000000)) + ' Crore' + (n % 10000000 !== 0 ? ' ' + inWords(n % 10000000) : '');
+        }
+
+        const whole = Math.floor(num);
+        return 'Rupees ' + inWords(whole) + ' Only';
+    }
+
+    function showNotification(message, isError = false) {
+        const notificationEl = document.getElementById('qb-notification');
+        if (!notificationEl) return;
+        notificationEl.textContent = message;
+        notificationEl.style.backgroundColor = isError ? 'var(--accent-red)' : 'var(--accent-green)';
+        notificationEl.classList.add('is-visible');
+        setTimeout(() => {
+            notificationEl.classList.remove('is-visible');
+        }, 2500);
+    }
+
+    // =================================================================
+    // EVENT LISTENERS
+    // =================================================================
+    function bindEventListeners() {
+        nextBtn.addEventListener('click', handleNext);
+        backBtn.addEventListener('click', handleBack);
+        form.addEventListener('input', debounce(handleFormInput, 300));
+        form.addEventListener('change', handleFormInput);
+
+        // Header actions
+        document.getElementById('save-draft-btn').addEventListener('click', () => saveDraft(true));
+        document.getElementById('clear-draft-btn').addEventListener('click', clearAndCreateNewDraft);
+
+        // Logo uploader
+        logoUploader.addEventListener('click', () => logoUploadInput.click());
+        logoUploadInput.addEventListener('change', handleLogoUpload);
+        removeLogoBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            removeLogo();
+        });
+
+        // Step 2 listener for quotation number
+        document.getElementById('quotationNoSuffix').addEventListener('input', handleQuotationNoChange);
+        if (workTypeTrigger) {
+            workTypeTrigger.addEventListener('click', () => {
+                const isOpen = workTypePicker.classList.toggle('is-open');
+                workTypeTrigger.setAttribute('aria-expanded', String(isOpen));
+                if (isOpen && workTypeCustom) workTypeCustom.focus();
+            });
+        }
+        if (workTypeOptions) workTypeOptions.addEventListener('change', handleWorkTypeChange);
+        if (workTypeCustom) {
+            workTypeCustom.addEventListener('input', () => {
+                customWorkType = workTypeCustom.value.trim();
+                handleWorkTypeChange();
+            });
+        }
+        document.addEventListener('click', (event) => {
+            if (workTypePicker && !workTypePicker.contains(event.target)) {
+                workTypePicker.classList.remove('is-open');
+                if (workTypeTrigger) workTypeTrigger.setAttribute('aria-expanded', 'false');
+            }
+        });
+        
+        // Step 4 Presets
+        if (presetsGrid) {
+            presetsGrid.addEventListener('click', handlePresetClick);
+        }
+
+        // Step 4 listeners
+        addItemBtn.addEventListener('click', handleAddItem);
+        if (sftModeBtn) sftModeBtn.addEventListener('click', () => setMeasurementMode('sft'));
+        if (rftModeBtn) rftModeBtn.addEventListener('click', () => setMeasurementMode('rft'));
+        if (cancelEditBtn) {
+            cancelEditBtn.addEventListener('click', resetItemForm);
+        }
+        if (removeNotesBtn) removeNotesBtn.addEventListener('click', () => removeOptionalField('notes'));
+
+        workItemsList.addEventListener('click', (e) => {
+            const removeBtn = e.target.closest('[data-remove-item-index]');
+            if (removeBtn) {
+                handleRemoveItem(parseInt(removeBtn.dataset.removeItemIndex, 10));
+                return;
+            }
+            const editBtn = e.target.closest('[data-edit-item-index]');
+            if (editBtn) {
+                handleEditItem(parseInt(editBtn.dataset.editItemIndex, 10));
+                return;
+            }
+            const duplicateBtn = e.target.closest('[data-duplicate-item-index]');
+            if (duplicateBtn) {
+                handleDuplicateItem(parseInt(duplicateBtn.dataset.duplicateItemIndex, 10));
+                return;
+            }
+        });
+
+        // Action Hub in Step 5
+        const hubWa = document.getElementById('hub-whatsapp-btn');
+        const hubPrint = document.getElementById('hub-print-btn');
+        const hubCopy = document.getElementById('hub-copy-btn');
+
+        if (hubWa) hubWa.addEventListener('click', shareViaWhatsApp);
+        if (hubPrint) hubPrint.addEventListener('click', printVectorDocument);
+        if (hubCopy) hubCopy.addEventListener('click', copyQuotationSummary);
+
+        const downloadReadyPdfBtn = document.getElementById('download-ready-pdf-btn');
+        const payPdfBtn = document.getElementById('pay-pdf-btn');
+        const backToQuotationBtn = document.getElementById('back-to-quotation-btn');
+        if (downloadReadyPdfBtn) downloadReadyPdfBtn.addEventListener('click', downloadPreparedPdf);
+        if (payPdfBtn) payPdfBtn.addEventListener('click', startRazorpayPayment);
+        if (backToQuotationBtn) {
+            backToQuotationBtn.addEventListener('click', () => {
+                hideSuccessOverlay();
+                showStep(1);
+            });
+        }
+
+        // Modals
+        document.getElementById('live-preview-btn-mobile').addEventListener('click', () => {
+            renderPreview();
+            document.getElementById('live-preview-modal').classList.add('is-open');
+        });
+        document.querySelectorAll('[data-close-modal]').forEach(btn => {
+            btn.addEventListener('click', () => document.getElementById(btn.dataset.closeModal).classList.remove('is-open'));
+        });
+    }
+
+    // =================================================================
+    // START
+    // =================================================================
+    init();
+});
+</script>
+
+<!-- FalseQuote Analytics Engine Tracker -->
+<script>
+    window.FalseQuoteAnalytics = {
+        EVENTS_KEY: 'falsequote_analytics_events',
+        VERSION_KEY: 'falsequote_analytics_version',
+        PDF_EVENTS: ['quotation_pdf_download', 'invoice_pdf_download'],
+        localDateKey(date) {
+            return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
+        },
+        getVisitorId() {
+            let userId = localStorage.getItem('falsequote_visitor_id');
+            if (!userId) {
+                userId = 'visitor_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+                localStorage.setItem('falsequote_visitor_id', userId);
+            }
+            return userId;
+        },
+        getSessionId() {
+            let sessionId = sessionStorage.getItem('falsequote_session_id');
+            if (!sessionId) {
+                sessionId = 'session_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+                sessionStorage.setItem('falsequote_session_id', sessionId);
+            }
+            return sessionId;
+        },
+        cleanup(events) {
+            const now = Date.now();
+            return events.filter((event) => {
+                const ageDays = (now - new Date(event.timestamp).getTime()) / 86400000;
+                return this.PDF_EVENTS.includes(event.type) ? ageDays <= 365 : ageDays <= 30;
+            });
+        },
+        track(eventType, data = {}) {
+            try {
+                const now = new Date();
+                const stored = JSON.parse(localStorage.getItem(this.EVENTS_KEY) || '[]');
+                const events = Array.isArray(stored) ? this.cleanup(stored) : [];
+                events.push({
+                    id: 'evt_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8),
+                    type: eventType,
+                    timestamp: now.toISOString(),
+                    date: this.localDateKey(now),
+                    userId: this.getVisitorId(),
+                    sessionId: this.getSessionId(),
+                    documentType: data.documentType || '',
+                    documentNumber: data.documentNumber || '',
+                    status: data.status || 'success',
+                    isNew: Boolean(data.isNew),
+                    isTest: false
+                });
+                localStorage.setItem(this.EVENTS_KEY, JSON.stringify(events));
+                localStorage.setItem(this.VERSION_KEY, '1');
+            } catch (e) {
+                console.warn('Analytics storage unavailable', e);
+            }
+        }
+    };
+</script>
+</body>
+</html>

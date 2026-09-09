@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Refund Policy - FalseQuote</title>
+    <meta name="description" content="Refund and Cancellation Policy for FalseQuote. Understand refunds for our page-based PDF download service.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .policy-page { min-height: 100vh; padding-top: calc(var(--header-height) + 3rem); padding-bottom: 5rem; }
+        .policy-container { max-width: 860px; margin: 0 auto; padding: 0 1.5rem; }
+        .policy-header { text-align: center; margin-bottom: 3rem; }
+        .policy-badge {
+            display: inline-block;
+            background: rgba(255, 199, 0, 0.1);
+            border: 1px solid rgba(255, 199, 0, 0.2);
+            color: var(--accent-gold);
+            padding: 0.4rem 1rem;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            margin-bottom: 1rem;
+        }
+        .policy-title { font-size: 2.5rem; font-weight: 700; color: var(--primary-color); margin-bottom: 0.75rem; }
+        .policy-subtitle { color: var(--secondary-color); font-size: 1rem; line-height: 1.6; }
+        .policy-card {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 2.5rem;
+            margin-bottom: 1.5rem;
+            transition: border-color 0.3s ease;
+        }
+        .policy-card:hover { border-color: rgba(255, 199, 0, 0.25); }
+        .policy-card__icon { font-size: 1.8rem; margin-bottom: 1rem; display: block; }
+        .policy-card h2 { font-size: 1.2rem; font-weight: 700; color: var(--primary-color); margin-bottom: 1rem; }
+        .policy-card p { color: var(--secondary-color); line-height: 1.8; margin-bottom: 0.75rem; font-size: 0.95rem; }
+        .policy-card p:last-child { margin-bottom: 0; }
+        .policy-card ul { list-style: none; padding: 0; margin-top: 0.5rem; }
+        .policy-card ul li { color: var(--secondary-color); font-size: 0.95rem; line-height: 1.7; padding-left: 1.5rem; position: relative; margin-bottom: 0.4rem; }
+        .policy-card ul li::before { content: '→'; position: absolute; left: 0; color: var(--accent-gold); }
+        .refund-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        .refund-table th {
+            background: rgba(255, 199, 0, 0.08);
+            color: var(--accent-gold);
+            padding: 0.75rem 1rem;
+            text-align: left;
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 0.03em;
+        }
+        .refund-table td {
+            padding: 0.75rem 1rem;
+            color: var(--secondary-color);
+            font-size: 0.9rem;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            line-height: 1.5;
+        }
+        .refund-table tr:last-child td { border-bottom: none; }
+        .status-eligible { color: #4ade80; font-weight: 600; }
+        .status-no { color: #f87171; font-weight: 600; }
+        .status-case { color: #fbbf24; font-weight: 600; }
+        .policy-contact-box {
+            background: linear-gradient(135deg, rgba(255, 199, 0, 0.08) 0%, rgba(58, 139, 255, 0.08) 100%);
+            border: 1px solid rgba(255, 199, 0, 0.2);
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+            margin-top: 2rem;
+        }
+        .policy-contact-box h3 { font-size: 1.1rem; color: var(--primary-color); margin-bottom: 0.5rem; }
+        .policy-contact-box p { color: var(--secondary-color); font-size: 0.9rem; margin-bottom: 0.75rem; }
+        .policy-contact-box a { color: var(--accent-blue); font-weight: 600; text-decoration: underline; }
+        .policy-effective { text-align: center; color: var(--secondary-color); font-size: 0.85rem; margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.07); }
+        .back-link { display: inline-flex; align-items: center; gap: 0.4rem; color: var(--accent-blue); font-size: 0.9rem; font-weight: 500; margin-bottom: 2.5rem; transition: gap 0.2s ease; }
+        .back-link:hover { gap: 0.7rem; }
+        .policy-footer { background: rgba(255,255,255,0.02); border-top: 1px solid rgba(255,255,255,0.06); padding: 2rem 1.5rem; text-align: center; }
+        .policy-footer p { color: var(--secondary-color); font-size: 0.875rem; }
+        .policy-footer a { color: var(--accent-blue); }
+        .policy-footer a:hover { text-decoration: underline; }
+    </style>
+</head>
+
+<body>
+    <div class="hero__glow hero__glow--1"></div>
+    <div class="hero__glow hero__glow--2"></div>
+
+    <header class="header is-scrolled">
+        <nav class="nav container">
+            <a href="index.html" class="nav__logo">
+                <div class="nav__logo-icon-wrapper">
+                    <span class="nav__logo-char nav__logo-char--f">F</span>
+                    <span class="nav__logo-char nav__logo-char--q">Q</span>
+                </div>
+                <span class="nav__logo-text">FalseQuote</span>
+            </a>
+            <div class="nav__actions--desktop">
+                <a href="index.html" class="button button--secondary">← Back to Home</a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="policy-page">
+        <div class="policy-container">
+            <a href="index.html" class="back-link">← Back to Home</a>
+
+            <div class="policy-header">
+                <div class="policy-badge">Legal</div>
+                <h1 class="policy-title">Refund &amp; Cancellation Policy</h1>
+                <p class="policy-subtitle">We strive to provide the best service. This policy explains when and how refunds are processed for FalseQuote payments.</p>
+            </div>
+
+            <div class="policy-card">
+                <span class="policy-card__icon">📖</span>
+                <h2>1. Overview</h2>
+                <p>FalseQuote charges <strong>₹30 for 1–2 PDF pages</strong>, with ₹10 added for each page after the second, for both Quotations and Invoices. Since we provide a digital service, our refund policy is designed to be fair to both parties.</p>
+                <p>All payments are processed through <strong>Razorpay</strong>. This policy is in compliance with the Consumer Protection Act, 2019, and guidelines applicable to digital/online services in India.</p>
+            </div>
+
+            <div class="policy-card">
+                <span class="policy-card__icon">📊</span>
+                <h2>2. Refund Eligibility Summary</h2>
+                <table class="refund-table">
+                    <thead>
+                        <tr>
+                            <th>Scenario</th>
+                            <th>Refund Status</th>
+                            <th>Timeframe</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>PDF successfully downloaded</td>
+                            <td class="status-no">Not Eligible</td>
+                            <td>—</td>
+                        </tr>
+                        <tr>
+                            <td>Payment deducted but PDF not generated (our error)</td>
+                            <td class="status-eligible">Full Refund</td>
+                            <td>5–7 working days</td>
+                        </tr>
+                        <tr>
+                            <td>Duplicate payment charged</td>
+                            <td class="status-eligible">Full Refund</td>
+                            <td>5–7 working days</td>
+                        </tr>
+                        <tr>
+                            <td>Wrong amount charged</td>
+                            <td class="status-eligible">Full Refund</td>
+                            <td>5–7 working days</td>
+                        </tr>
+                        <tr>
+                            <td>Changed mind after payment</td>
+                            <td class="status-no">Not Eligible</td>
+                            <td>—</td>
+                        </tr>
+                        <tr>
+                            <td>Bank error or gateway failure</td>
+                            <td class="status-case">Case-by-Case</td>
+                            <td>7–10 working days</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="policy-card">
+                <span class="policy-card__icon">✅</span>
+                <h2>3. When You Are Eligible for a Refund</h2>
+                <p>A refund will be issued in the following situations:</p>
+                <ul>
+                    <li><strong>Technical Failure:</strong> Payment was deducted from your account, but the PDF was not generated due to a server or technical error on our side.</li>
+                    <li><strong>Double Charge:</strong> Your account was charged more than once for the same document download.</li>
+                    <li><strong>Wrong Amount:</strong> You were charged an amount different from the page-based price shown before payment.</li>
+                    <li><strong>Gateway Error:</strong> A verified issue with the Razorpay gateway caused an incorrect charge.</li>
+                </ul>
+            </div>
+
+            <div class="policy-card">
+                <span class="policy-card__icon">❌</span>
+                <h2>4. When Refunds Are NOT Applicable</h2>
+                <p>Refunds will not be provided in the following situations:</p>
+                <ul>
+                    <li>The PDF was successfully generated and downloaded to your device.</li>
+                    <li>You changed your mind or no longer need the document after downloading.</li>
+                    <li>The document content was incorrect due to data entered by you (user error).</li>
+                    <li>The refund request was made more than 7 days after the transaction date.</li>
+                    <li>Payment disputes initiated without first contacting our support team.</li>
+                </ul>
+            </div>
+
+            <div class="policy-card">
+                <span class="policy-card__icon">📩</span>
+                <h2>5. How to Request a Refund</h2>
+                <p>To request a refund, follow these steps:</p>
+                <ul>
+                    <li>Send an email to <a href="mailto:supporthelpfalsequote@gmail.com" style="color:var(--accent-blue);">supporthelpfalsequote@gmail.com</a> within <strong>7 days</strong> of the transaction.</li>
+                    <li>Use the subject line: <strong>"Refund Request – [Your Razorpay Payment ID]"</strong></li>
+                    <li>Include: Your name, Razorpay Payment ID (starts with "pay_"), transaction date, and reason for refund.</li>
+                    <li>Attach a screenshot of the payment confirmation if available.</li>
+                </ul>
+                <p>We will acknowledge your request within <strong>24–48 working hours</strong> and process eligible refunds within <strong>5–7 working days</strong>.</p>
+            </div>
+
+            <div class="policy-card">
+                <span class="policy-card__icon">🏦</span>
+                <h2>6. Refund Processing</h2>
+                <p>All approved refunds are processed through Razorpay to your original payment method:</p>
+                <ul>
+                    <li><strong>Credit/Debit Card:</strong> Refund credited to the same card within 5–7 working days.</li>
+                    <li><strong>UPI:</strong> Refund credited to the same UPI-linked bank account within 3–5 working days.</li>
+                    <li><strong>Net Banking:</strong> Refund credited within 5–7 working days.</li>
+                </ul>
+                <p>Refund timelines depend on your bank's processing speed. FalseQuote is not responsible for delays caused by banks or payment networks.</p>
+            </div>
+
+            <div class="policy-card">
+                <span class="policy-card__icon">🚫</span>
+                <h2>7. Cancellation Policy</h2>
+                <p>Since FalseQuote provides an instant digital service (PDF generation upon payment), cancellation of an order is not possible once payment is initiated.</p>
+                <ul>
+                    <li>If payment is in progress (pending status), you may close the payment window, and no charge will be made.</li>
+                    <li>Once Razorpay confirms the payment as successful, the transaction cannot be cancelled.</li>
+                    <li>In case of a pending transaction that is debited but not confirmed, it will auto-reverse within 5–7 working days by your bank.</li>
+                </ul>
+            </div>
+
+            <div class="policy-card">
+                <span class="policy-card__icon">⚖️</span>
+                <h2>8. Dispute Resolution</h2>
+                <p>If you are dissatisfied with our refund decision, you may:</p>
+                <ul>
+                    <li>Email us again with additional evidence at <a href="mailto:supporthelpfalsequote@gmail.com" style="color:var(--accent-blue);">supporthelpfalsequote@gmail.com</a></li>
+                    <li>Contact Razorpay's customer support for payment-related disputes.</li>
+                    <li>Lodge a complaint with the Consumer Forum under the Consumer Protection Act, 2019 (for amounts above ₹1 lakh).</li>
+                </ul>
+                <p>We are committed to resolving all disputes fairly and transparently.</p>
+            </div>
+
+            <div class="policy-contact-box">
+                <h3>💬 Need Help with a Refund?</h3>
+                <p>Contact our support team and we'll resolve your issue as quickly as possible:</p>
+                <a href="mailto:supporthelpfalsequote@gmail.com">supporthelpfalsequote@gmail.com</a>
+                <p style="margin-top: 0.75rem; font-size:0.85rem;">📌 Please include your Razorpay Payment ID in all refund requests.<br>Response time: 24–48 working hours</p>
+            </div>
+
+            <p class="policy-effective">Effective Date: 1st September 2026 &nbsp;|&nbsp; Last Updated: 6th September 2026</p>
+        </div>
+    </main>
+
+    <footer class="policy-footer">
+        <p>© 2026 FalseQuote. All Rights Reserved. &nbsp;|&nbsp;
+            <a href="privacy-policy.html">Privacy Policy</a> &nbsp;|&nbsp;
+            <a href="terms-and-conditions.html">Terms &amp; Conditions</a> &nbsp;|&nbsp;
+            <a href="refund-policy.html">Refund Policy</a> &nbsp;|&nbsp;
+            <a href="contact.html">Contact Us</a>
+        </p>
+    </footer>
+</body>
+
+</html>
